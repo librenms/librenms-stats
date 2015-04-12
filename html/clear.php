@@ -13,6 +13,7 @@
  */
 
 require '../dibi/dibi.php';
+require '../config.php';
 dibi::connect(array(
                     'database'=>$config['dbname'],
                     'username'=>$config['username'],
