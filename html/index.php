@@ -182,7 +182,7 @@ function grab_data($type,$div,$groups,$total='sum',$group='`group`,`value`',$xke
                         'xkey'=>'y',
                         'hideHover'=>false,
                         'barRatio'=>0.4,
-                        'xLabelAngle'=>35,
+                        'xLabelAngle'=>90,
                         'ykeys'=>array('a'),
                         'labels'=>array('Total'));
     } elseif ($type == 'bar') {
