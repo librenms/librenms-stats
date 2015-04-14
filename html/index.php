@@ -185,7 +185,7 @@ function grab_data($type,$div,$groups,$total='sum',$group='`group`,`value`',$xke
                         'xLabelAngle'=>90,
                         'ykeys'=>array('a'),
                         'labels'=>array('Total'));
-    } elseif ($type == 'bar') {
+    } elseif ($type == 'donut') {
         $output = array('element'=>$div,
                         'colors'=>array('#f54757','#f96ff1','#9c7ffa','#7fe7fa','#7ffa9c','#dffa7f','#fa8b7f'),
                         'data'=>$response);
