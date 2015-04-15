@@ -154,9 +154,9 @@ foreach ($morris as $chart) {
 function grab_data($type,$div,$groups,$total='sum',$group='`group`,`value`',$xkey='y') {
     $groups = "'".implode("','",$groups)."'";
     if ($div == 'draw-submitters') {
-        $result = dibi::query("SELECT COUNT(DISTINCT(`hosts_id`)) AS `total`, 'Submitters' AS `value`,'Submitters' AS `name`,'Submitters' AS `group` FROM `run` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 24 HOUR)");
+        $result = dibi::query("SELECT COUNT(DISTINCT(`hosts_id`)) AS `total`, 'Submitters' AS `value`,'Submitters' AS `name`,'Submitters' AS `group` FROM `run` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 48 HOUR)");
     } else {
-        $result = dibi::query("SELECT $total(`total`) AS `total`, `group`,`name`,`value` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 24 HOUR) AND `group` IN ($groups) GROUP BY $group");
+        $result = dibi::query("SELECT DISTINCT(`uuid`), $total(`total`) AS `total`, `group`,`name`,`value` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 48 HOUR) AND `group` IN ($groups) GROUP BY $group");
     }
     $all = $result->fetchAll();
     foreach ($all as $data) {
