@@ -51,7 +51,6 @@ h3,
 h4,
 h5,
 h6 {
-    text-transform: uppercase;
     font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
     font-weight: 700;
 }
@@ -73,7 +72,7 @@ h6 {
     text-transform: uppercase;
     font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
     font-weight: 700;
-    color: #fff;
+    color: #;
     background-color: #fed136;
 }
 
@@ -83,7 +82,7 @@ h6 {
 .btn-primary.active,
 .open .dropdown-toggle.btn-primary {
     border-color: #f6bf01;
-    color: #fff;
+    color: #;
     background-color: #fec503;
 }
 
@@ -114,7 +113,7 @@ fieldset[disabled] .btn-primary.active {
 
 .btn-primary .badge {
     color: #fed136;
-    background-color: #fff;
+    background-color: #;
 }
 
 .btn-xl {
@@ -125,7 +124,7 @@ fieldset[disabled] .btn-primary.active {
     font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: 18px;
     font-weight: 700;
-    color: #fff;
+    color: #;
     background-color: #fed136;
 }
 
@@ -135,7 +134,7 @@ fieldset[disabled] .btn-primary.active {
 .btn-xl.active,
 .open .dropdown-toggle.btn-xl {
     border-color: #f6bf01;
-    color: #fff;
+    color: #;
     background-color: #fec503;
 }
 
@@ -263,7 +262,6 @@ fieldset[disabled] .btn-xl.active {
 
 header {
     text-align: center;
-    color: #fff;
     background-attachment: scroll;
     -webkit-background-size: cover;
     -moz-background-size: cover;
