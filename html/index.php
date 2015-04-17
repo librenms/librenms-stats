@@ -78,15 +78,16 @@ dibi::connect(array(
 <br /><br /><br />
 <?php
 
-$morris[] = array('id'=>'draw-applications','type'=>'bar','data'=>array('applications'));
-$morris[] = array('id'=>'draw-snmp-version','type'=>'bar','data'=>array('snmp_version'));
+$exclude_ports = '"0","31","51","1073","4295","1092","11","130","1410","2","65"';
+$morris[] = array('id'=>'draw-applications','type'=>'donut','data'=>array('applications'));
+$morris[] = array('id'=>'draw-snmp-version','type'=>'donut','data'=>array('snmp_version'));
 $morris[] = array('id'=>'draw-os','type'=>'bar','data'=>array('os'));
+$morris[] = array('id'=>'draw-alert_rules','type'=>'donut','data'=>array('alert_rules'));
 $morris[] = array('id'=>'draw-type','type'=>'bar','data'=>array('type'));
-$morris[] = array('id'=>'draw-total_devices','type'=>'bar','data'=>array('type'),'group'=>'`name`','xkey'=>'Devices');
-$morris[] = array('id'=>'draw-port_type','type'=>'bar','data'=>array('port_type'));
-$morris[] = array('id'=>'draw-total_ports','type'=>'bar','data'=>array('port_type'),'group'=>'`name`','xkey'=>'Ports');
-$morris[] = array('id'=>'draw-port_ifspeed','type'=>'bar','data'=>array('port_ifspeed'));
-$morris[] = array('id'=>'draw-alert_rules','type'=>'bar','data'=>array('alert_rules'));
+$morris[] = array('id'=>'draw-total_devices','type'=>'line','data'=>array('type'),'group'=>'DATE_FORMAT(`run`.`datetime`,"%Y-%m-%d")');
+$morris[] = array('id'=>'draw-port_type','type'=>'bar','data'=>array('port_type'),'sql_limit'=>' AND `value` NOT IN ('.$exclude_ports.')');
+$morris[] = array('id'=>'draw-total_ports','type'=>'line','data'=>array('port_type'),'group'=>'DATE_FORMAT(`run`.`datetime`,"%Y-%m-%d")','sql_limit'=>' AND `value` NOT IN ('.$exclude_ports.')');
+$morris[] = array('id'=>'draw-port_ifspeed','type'=>'bar','data'=>array('port_ifspeed'),'sql_limit'=>' AND `value` NOT IN ('.$exclude_ports.')');
 $morris[] = array('id'=>'draw-dbschema','type'=>'bar','data'=>array('dbschema'),'total'=>'count');
 
 ?>
@@ -94,16 +95,11 @@ $morris[] = array('id'=>'draw-dbschema','type'=>'bar','data'=>array('dbschema'),
     <header>
         <div class="container">
             <div class="row">
-                <div class="col-sm-6">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            <h3 class="panel-title">Submitters</h3>
-                        </div>
-                        <div class="panel-body">
-                            <div id="draw-submitters"></div>
-                        </div>
-                    </div>
-                </div>
+                <div class="col-sm-12">
+                    <h1><span class="label label-success"><?php echo $submitters; ?></span></h1> <h3>LibreNMS installs have submitted statistics.</h3>
+                 </div>
+            </div>
+            <div class="row">
 <?php
 
 foreach ($morris as $chart) {
@@ -111,7 +107,7 @@ foreach ($morris as $chart) {
     list(,$title) = explode("-",$chart['id']);
 
           echo('<div class="col-sm-6">
-                    <div class="panel panel-default">
+                    <div class="panel panel-primary">
                         <div class="panel-heading">
                             <h3 class="panel-title">'.$title.'</h3>
                         </div>
@@ -151,12 +147,12 @@ foreach ($morris as $chart) {
 
 <?php
 
-function grab_data($type,$div,$groups,$total='sum',$group='`group`,`value`',$xkey='y') {
+function grab_data($type,$div,$groups,$total='sum',$group='`group`,`value`',$xkey='y',$sql = '') {
     $groups = "'".implode("','",$groups)."'";
-    if ($div == 'draw-submitters') {
-        $result = dibi::query("SELECT COUNT(DISTINCT(`hosts_id`)) AS `total`, 'Submitters' AS `value`,'Submitters' AS `name`,'Submitters' AS `group` FROM `run` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 48 HOUR)");
+    if ($div == 'draw-total_devices' || $div == 'draw-total_ports') {
+         $result = dibi::query("SELECT DISTINCT(`uuid`), $total(`total`) AS `total`, `group`,`name`,DATE_FORMAT(`run`.`datetime`,'%Y-%m-%d') AS `value` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `group` IN ($groups) $sql GROUP BY $group");
     } else {
-        $result = dibi::query("SELECT DISTINCT(`uuid`), $total(`total`) AS `total`, `group`,`name`,`value` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 48 HOUR) AND `group` IN ($groups) GROUP BY $group");
+         $result = dibi::query("SELECT DISTINCT(`uuid`), $total(`total`) AS `total`, `group`,`name`,`value` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 48 HOUR) AND `group` IN ($groups) $sql GROUP BY $group");
     }
     $all = $result->fetchAll();
     foreach ($all as $data) {
@@ -169,7 +165,7 @@ function grab_data($type,$div,$groups,$total='sum',$group='`group`,`value`',$xke
             $y = $xkey;
         }
         $a = $data['total'];
-        if ($type == 'bar') {
+        if ($type == 'bar' || $type == 'line') {
             $response[] = array('y'=>$y,'a'=>$a);
         } elseif ($type == 'donut') {
             $response[] = array('label'=>$y,'value'=>$a);
@@ -187,8 +183,14 @@ function grab_data($type,$div,$groups,$total='sum',$group='`group`,`value`',$xke
                         'labels'=>array('Total'));
     } elseif ($type == 'donut') {
         $output = array('element'=>$div,
-                        'colors'=>array('#f54757','#f96ff1','#9c7ffa','#7fe7fa','#7ffa9c','#dffa7f','#fa8b7f'),
                         'data'=>$response);
+    } elseif ($type == 'line') {
+        $output = array('element'=>$div,
+                        'data'=>$response,
+                        'xkey'=>'y',
+                        'xLabelAngle'=>90,
+                        'ykeys'=>array('a'),
+                        'labels'=>array('Total'));
     }
     return json_encode($output);
 }
@@ -196,12 +198,6 @@ function grab_data($type,$div,$groups,$total='sum',$group='`group`,`value`',$xke
 ?>
 <script>
 <?php
-
-$data = grab_data('bar','draw-submitters','','','','y');
-echo("
-Morris.Bar(
-  $data
-);");
 
 foreach ($morris as $chart) {
     if (!isset($chart['total'])) {
@@ -213,7 +209,7 @@ foreach ($morris as $chart) {
     if (!isset($chart['xkey'])) {
         $chart['xkey'] = 'y';
     }
-    $data = grab_data($chart['type'],$chart['id'],$chart['data'],$chart['total'],$chart['group'],$chart['xkey']);
+    $data = grab_data($chart['type'],$chart['id'],$chart['data'],$chart['total'],$chart['group'],$chart['xkey'],$chart['sql_limit']);
     echo("
 Morris.".ucfirst($chart['type'])."(
   $data
