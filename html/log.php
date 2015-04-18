@@ -35,7 +35,7 @@ if (!empty($uuid) && !empty($output['data'])) {
     } else {
         dibi::query("UPDATE `hosts` SET",array('last_updated'=>array('NOW()')), "WHERE `hosts_id`=?",$host_id);
     }
-    $result = dibi::query("SELECT `run_id` FROM `run` WHERE `datetime` >= DATE_SUB(NOW(), INTERVAL 24 HOUR) AND `hosts_id`=?","$host_id");
+    $result = dibi::query("SELECT `run_id` FROM `run` WHERE `datetime` >= DATE_SUB(NOW(), INTERVAL 20 HOUR) AND `hosts_id`=?","$host_id");
     $run_id = $result->fetchSingle();
     if (empty($run_id)) {
         dibi::query("INSERT INTO `run`",array('hosts_id'=>$host_id,'datetime'=>array('NOW()')));
