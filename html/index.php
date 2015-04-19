@@ -20,7 +20,7 @@ dibi::connect(array(
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>LibreNMS - User Stats</title>
+    <title>LibreNMS - User-submitted Stats</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -59,7 +59,7 @@ dibi::connect(array(
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand page-scroll" href="#page-top">LibreNMS user-submitted stats</a>
+                <a class="navbar-brand page-scroll" href="#page-top">LibreNMS user stats</a>
             </div>
 
             <!-- Collect the nav links, forms, and other content for toggling -->
