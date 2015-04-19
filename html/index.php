@@ -20,7 +20,7 @@ dibi::connect(array(
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>LibreNMS - User-Submitted Stats</title>
+    <title>LibreNMS - User Stats</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
