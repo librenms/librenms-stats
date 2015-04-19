@@ -89,6 +89,8 @@ $morris[] = array('id'=>'draw-port_type','type'=>'bar','data'=>array('port_type'
 $morris[] = array('id'=>'draw-total_ports','type'=>'line','data'=>array('port_type'),'group'=>'DATE_FORMAT(`run`.`datetime`,"%Y-%m-%d")','sql_limit'=>' AND `value` NOT IN ('.$exclude_ports.')');
 $morris[] = array('id'=>'draw-port_ifspeed','type'=>'bar','data'=>array('port_ifspeed'),'sql_limit'=>' AND `value` NOT IN ('.$exclude_ports.')');
 $morris[] = array('id'=>'draw-dbschema','type'=>'bar','data'=>array('dbschema'),'total'=>'count');
+$result = dibi::query("SELECT COUNT(DISTINCT(`uuid`)) AS `total` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 48 HOUR)");
+$submitters = $result->fetchAll()[0]['total'];
 
 ?>
     <!-- Header -->
