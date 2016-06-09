@@ -78,7 +78,7 @@ dibi::connect(array(
 <br /><br /><br />
 <?php
 
-$exclude_ports = '"0","31","51","1073","4295","1092","11","130","1410","2","65"';
+$exclude_ports = '"0","31","51","1073","4295","1092","11","130","1410","2","65","1010","1030","1049","106","1074","109","110","1100","4294967295","434","1410","2820"';
 $morris[] = array('id'=>'draw-applications','type'=>'donut','data'=>array('applications'));
 $morris[] = array('id'=>'draw-snmp-version','type'=>'donut','data'=>array('snmp_version'));
 $morris[] = array('id'=>'draw-os','type'=>'bar','data'=>array('os'));
@@ -87,9 +87,9 @@ $morris[] = array('id'=>'draw-type','type'=>'bar','data'=>array('type'));
 $morris[] = array('id'=>'draw-total_devices','type'=>'line','data'=>array('type'),'group'=>'DATE_FORMAT(`run`.`datetime`,"%Y-%m-%d")');
 $morris[] = array('id'=>'draw-port_type','type'=>'bar','data'=>array('port_type'),'sql_limit'=>' AND `value` NOT IN ('.$exclude_ports.')');
 $morris[] = array('id'=>'draw-total_ports','type'=>'line','data'=>array('port_type'),'group'=>'DATE_FORMAT(`run`.`datetime`,"%Y-%m-%d")','sql_limit'=>' AND `value` NOT IN ('.$exclude_ports.')');
-$morris[] = array('id'=>'draw-port_ifspeed','type'=>'bar','data'=>array('port_ifspeed'),'sql_limit'=>' AND `value` NOT IN ('.$exclude_ports.')');
+$morris[] = array('id'=>'draw-port_ifspeed','type'=>'bar','data'=>array('port_ifspeed'),'sql_limit'=>' AND `value` NOT IN ('.$exclude_ports.') AND (`value` % 100 = 0 OR `value` % 100 = 10)');
 $morris[] = array('id'=>'draw-dbschema','type'=>'bar','data'=>array('dbschema'),'total'=>'count');
-$result = dibi::query("SELECT COUNT(DISTINCT(`uuid`)) AS `total` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 48 HOUR)");
+$result = dibi::query("SELECT COUNT(DISTINCT(`uuid`)) AS `total` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 24 HOUR)");
 $submitters = $result->fetchAll()[0]['total'];
 
 ?>
