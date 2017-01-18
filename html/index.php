@@ -1,13 +1,7 @@
 <?php
 
-require_once "../config.php";
 require '../dibi/dibi.php';
-dibi::connect(array(
-                    'database'=>$config['dbname'],
-                    'username'=>$config['username'],
-                    'password'=>$config['password'],
-                    'host'=>$config['host'],
-                    'driver'=>'mysqli'));
+require '../cache.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -89,8 +83,11 @@ $morris[] = array('id'=>'draw-port_type','type'=>'bar','data'=>array('port_type'
 $morris[] = array('id'=>'draw-total_ports','type'=>'line','data'=>array('port_type'),'group'=>'DATE_FORMAT(`run`.`datetime`,"%Y-%m-%d")','sql_limit'=>' AND `value` NOT IN ('.$exclude_ports.')');
 $morris[] = array('id'=>'draw-port_ifspeed','type'=>'bar','data'=>array('port_ifspeed'),'sql_limit'=>' AND `value` NOT IN ('.$exclude_ports.') AND (`value` % 100 = 0 OR `value` % 100 = 10)');
 $morris[] = array('id'=>'draw-dbschema','type'=>'bar','data'=>array('dbschema'),'total'=>'count');
-$result = dibi::query("SELECT COUNT(DISTINCT(`uuid`)) AS `total` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 24 HOUR)");
-$submitters = $result->fetchAll()[0]['total'];
+$submitters = cache_get_or_fetch('submitter_count', function () {
+    db_connect();
+    $result = dibi::query("SELECT COUNT(DISTINCT(`uuid`)) AS `total` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 24 HOUR)");
+    return $result->fetchAll()[0]['total'];
+});
 
 ?>
     <!-- Header -->
@@ -149,51 +146,73 @@ foreach ($morris as $chart) {
 
 <?php
 
-function grab_data($type,$div,$groups,$total='sum',$group='`group`,`value`',$xkey='y',$sql = '') {
+function db_connect() {
+    if(!dibi::isConnected()) {
+        require_once "../config.php";
+        dibi::connect(array(
+            'database'=>$config['dbname'],
+            'username'=>$config['username'],
+            'password'=>$config['password'],
+            'host'=>$config['host'],
+            'driver'=>'mysqli'));
+    }
+}
+
+
+function grab_data($type,$div,$groups,$total='sum',$group='`group`,`value`',$xkey='y',$extra_sql = '') {
     $groups = "'".implode("','",$groups)."'";
     if ($div == 'draw-total_devices' || $div == 'draw-total_ports') {
-         $result = dibi::query("SELECT DISTINCT(`uuid`), $total(`total`) AS `total`, `group`,`name`,DATE_FORMAT(`run`.`datetime`,'%Y-%m-%d') AS `value` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `group` IN ($groups) $sql GROUP BY $group");
+        $sql = "SELECT DISTINCT(`uuid`), $total(`total`) AS `total`, `group`,`name`,DATE_FORMAT(`run`.`datetime`,'%Y-%m-%d') AS `value` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `group` IN ($groups) $extra_sql GROUP BY $group";
     } else {
-         $result = dibi::query("SELECT DISTINCT(`uuid`), $total(`total`) AS `total`, `group`,`name`,`value` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 48 HOUR) AND `group` IN ($groups) $sql GROUP BY $group");
-    }
-    $all = $result->fetchAll();
-    foreach ($all as $data) {
-        if (empty($data['name'])) {
-            $y = $data['group'];
-        } else {
-            $y = $data['value'];
-        }
-        if ($xkey != 'y') {
-            $y = $xkey;
-        }
-        $a = $data['total'];
-        if ($type == 'bar' || $type == 'line') {
-            $response[] = array('y'=>$y,'a'=>$a);
-        } elseif ($type == 'donut') {
-            $response[] = array('label'=>$y,'value'=>$a);
-        }
+        $sql = "SELECT DISTINCT(`uuid`), $total(`total`) AS `total`, `group`,`name`,`value` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 48 HOUR) AND `group` IN ($groups) $extra_sql GROUP BY $group";
     }
 
-    if ($type == 'bar') {
-        $output = array('element'=>$div,
-                        'data'=>$response,
-                        'xkey'=>'y',
-                        'hideHover'=>false,
-                        'barRatio'=>0.4,
-                        'xLabelAngle'=>90,
-                        'ykeys'=>array('a'),
-                        'labels'=>array('Total'));
-    } elseif ($type == 'donut') {
-        $output = array('element'=>$div,
-                        'data'=>$response);
-    } elseif ($type == 'line') {
-        $output = array('element'=>$div,
-                        'data'=>$response,
-                        'xkey'=>'y',
-                        'xLabelAngle'=>90,
-                        'ykeys'=>array('a'),
-                        'labels'=>array('Total'));
-    }
+    $output = cache_get_or_fetch($div, function() use ($sql, $type, $div, $xkey) {
+         db_connect();
+         $result = dibi::query($sql);
+         $all = $result->fetchAll();
+
+        $response = array();
+        foreach ($all as $data) {
+            if (empty($data['name'])) {
+                $y = $data['group'];
+            } else {
+                $y = $data['value'];
+            }
+            if ($xkey != 'y') {
+                $y = $xkey;
+            }
+            $a = $data['total'];
+            if ($type == 'bar' || $type == 'line') {
+                $response[] = array('y'=>$y,'a'=>$a);
+            } elseif ($type == 'donut') {
+                $response[] = array('label'=>$y,'value'=>$a);
+            }
+        }
+
+        if ($type == 'bar') {
+            return array('element'=>$div,
+                            'data'=>$response,
+                            'xkey'=>'y',
+                            'hideHover'=>false,
+                            'barRatio'=>0.4,
+                            'xLabelAngle'=>90,
+                            'ykeys'=>array('a'),
+                            'labels'=>array('Total'));
+        } elseif ($type == 'donut') {
+            return array('element'=>$div,
+                            'data'=>$response);
+        } elseif ($type == 'line') {
+            return array('element'=>$div,
+                            'data'=>$response,
+                            'xkey'=>'y',
+                            'xLabelAngle'=>90,
+                            'ykeys'=>array('a'),
+                            'labels'=>array('Total'));
+        }
+        return array();
+     });
+
     return json_encode($output);
 }
 //$general = grab_data('bar','draw-general',array('alert_rules','alert_templates','api_tokens','bills','cef','inventory','ipsec','pollers','pseudowires','vmware','vrfs'));
@@ -211,6 +230,10 @@ foreach ($morris as $chart) {
     if (!isset($chart['xkey'])) {
         $chart['xkey'] = 'y';
     }
+    if (!isset($chart['sql_limit'])) {
+        $chart['sql_limit'] = '';
+    }
+
     $data = grab_data($chart['type'],$chart['id'],$chart['data'],$chart['total'],$chart['group'],$chart['xkey'],$chart['sql_limit']);
     echo("
 Morris.".ucfirst($chart['type'])."(
