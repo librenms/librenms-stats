@@ -23,6 +23,7 @@ require "../config.php";
 
     <!-- Custom CSS -->
     <link href="css/agency.css" rel="stylesheet">
+    <link href="css/app.css" rel="stylesheet">
 
     <!-- Custom Fonts -->
     <link href="font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
@@ -101,6 +102,7 @@ foreach ($charts as $chart_id => $chart) {
                             <h3 class="panel-title">' . $title . '</h3>
                         </div>
                         <div class="panel-body">
+                            <i id="' . $chart_id . '-spinner" class="fa fa-spinner fa-spin fa-5x fa-fw"></i>
                             <div id="' . $chart_id . '"></div>
                         </div>
                     </div>
