@@ -1,7 +1,9 @@
 <?php
 
 require '../dibi/dibi.php';
-require '../cache.php';
+require '../functions.php';
+require '../definitions.php';
+require "../config.php";
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -72,17 +74,6 @@ require '../cache.php';
 <br /><br /><br />
 <?php
 
-$exclude_ports = '"0","31","51","1073","4295","1092","11","130","1410","2","65","1010","1030","1049","106","1074","109","110","1100","4294967295","434","1410","2820"';
-$morris[] = array('id'=>'draw-applications','type'=>'donut','data'=>array('applications'));
-$morris[] = array('id'=>'draw-snmp-version','type'=>'donut','data'=>array('snmp_version'));
-$morris[] = array('id'=>'draw-os','type'=>'bar','data'=>array('os'));
-$morris[] = array('id'=>'draw-alert_rules','type'=>'donut','data'=>array('alert_rules'));
-$morris[] = array('id'=>'draw-type','type'=>'bar','data'=>array('type'));
-$morris[] = array('id'=>'draw-total_devices','type'=>'line','data'=>array('type'),'group'=>'DATE_FORMAT(`run`.`datetime`,"%Y-%m-%d")');
-$morris[] = array('id'=>'draw-port_type','type'=>'bar','data'=>array('port_type'),'sql_limit'=>' AND `value` NOT IN ('.$exclude_ports.')');
-$morris[] = array('id'=>'draw-total_ports','type'=>'line','data'=>array('port_type'),'group'=>'DATE_FORMAT(`run`.`datetime`,"%Y-%m-%d")','sql_limit'=>' AND `value` NOT IN ('.$exclude_ports.')');
-$morris[] = array('id'=>'draw-port_ifspeed','type'=>'bar','data'=>array('port_ifspeed'),'sql_limit'=>' AND `value` NOT IN ('.$exclude_ports.') AND (`value` % 100 = 0 OR `value` % 100 = 10)');
-$morris[] = array('id'=>'draw-dbschema','type'=>'bar','data'=>array('dbschema'),'total'=>'count');
 $submitters = cache_get_or_fetch('submitter_count', function () {
     db_connect();
     $result = dibi::query("SELECT COUNT(DISTINCT(`uuid`)) AS `total` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 24 HOUR)");
@@ -101,17 +92,16 @@ $submitters = cache_get_or_fetch('submitter_count', function () {
             <div class="row">
 <?php
 
-foreach ($morris as $chart) {
-    $id = $chart['id'];
-    list(,$title) = explode("-",$chart['id']);
+foreach ($charts as $chart_id => $chart) {
+    list(, $title) = explode("-", $chart_id);
 
-          echo('<div class="col-sm-6">
+    echo('<div class="col-sm-6">
                     <div class="panel panel-primary">
                         <div class="panel-heading">
-                            <h3 class="panel-title">'.$title.'</h3>
+                            <h3 class="panel-title">' . $title . '</h3>
                         </div>
                         <div class="panel-body">
-                            <div id="'.$id.'"></div>
+                            <div id="' . $chart_id . '"></div>
                         </div>
                     </div>
                 </div>');
@@ -140,110 +130,32 @@ foreach ($morris as $chart) {
 
     <!-- Custom Theme JavaScript -->
     <script src="js/agency.js"></script>
-    
+
+    <!-- App specific JavaScript -->
+    <script src="js/app.js"></script>
+
     <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.min.js"></script>
 
-<?php
-
-function db_connect() {
-    if(!dibi::isConnected()) {
-        require_once "../config.php";
-        dibi::connect(array(
-            'database'=>$config['dbname'],
-            'username'=>$config['username'],
-            'password'=>$config['password'],
-            'host'=>$config['host'],
-            'driver'=>'mysqli'));
-    }
-}
-
-
-function grab_data($type,$div,$groups,$total='sum',$group='`group`,`value`',$xkey='y',$extra_sql = '') {
-    $groups = "'".implode("','",$groups)."'";
-    if ($div == 'draw-total_devices' || $div == 'draw-total_ports') {
-        $sql = "SELECT DISTINCT(`uuid`), $total(`total`) AS `total`, `group`,`name`,DATE_FORMAT(`run`.`datetime`,'%Y-%m-%d') AS `value` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `group` IN ($groups) $extra_sql GROUP BY $group";
-    } else {
-        $sql = "SELECT DISTINCT(`uuid`), $total(`total`) AS `total`, `group`,`name`,`value` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 48 HOUR) AND `group` IN ($groups) $extra_sql GROUP BY $group";
-    }
-
-    $output = cache_get_or_fetch($div, function() use ($sql, $type, $div, $xkey) {
-         db_connect();
-         $result = dibi::query($sql);
-         $all = $result->fetchAll();
-
-        $response = array();
-        foreach ($all as $data) {
-            if (empty($data['name'])) {
-                $y = $data['group'];
-            } else {
-                $y = $data['value'];
-            }
-            if ($xkey != 'y') {
-                $y = $xkey;
-            }
-            $a = $data['total'];
-            if ($type == 'bar' || $type == 'line') {
-                $response[] = array('y'=>$y,'a'=>$a);
-            } elseif ($type == 'donut') {
-                $response[] = array('label'=>$y,'value'=>$a);
-            }
-        }
-
-        if ($type == 'bar') {
-            return array('element'=>$div,
-                            'data'=>$response,
-                            'xkey'=>'y',
-                            'hideHover'=>false,
-                            'barRatio'=>0.4,
-                            'xLabelAngle'=>90,
-                            'ykeys'=>array('a'),
-                            'labels'=>array('Total'));
-        } elseif ($type == 'donut') {
-            return array('element'=>$div,
-                            'data'=>$response);
-        } elseif ($type == 'line') {
-            return array('element'=>$div,
-                            'data'=>$response,
-                            'xkey'=>'y',
-                            'xLabelAngle'=>90,
-                            'ykeys'=>array('a'),
-                            'labels'=>array('Total'));
-        }
-        return array();
-     });
-
-    return json_encode($output);
-}
-//$general = grab_data('bar','draw-general',array('alert_rules','alert_templates','api_tokens','bills','cef','inventory','ipsec','pollers','pseudowires','vmware','vrfs'));
-?>
 <script>
 <?php
 
-foreach ($morris as $chart) {
-    if (!isset($chart['total'])) {
-        $chart['total'] = 'SUM';
-    }
-    if (!isset($chart['group'])) {
-        $chart['group'] = '`group`,`value`';
-    }
-    if (!isset($chart['xkey'])) {
-        $chart['xkey'] = 'y';
-    }
-    if (!isset($chart['sql_limit'])) {
-        $chart['sql_limit'] = '';
-    }
+echo "\n$( document ).ready(function() {\n";
 
-    $data = grab_data($chart['type'],$chart['id'],$chart['data'],$chart['total'],$chart['group'],$chart['xkey'],$chart['sql_limit']);
+foreach ($charts as $chart_id => $chart) {
+    $data = json_encode(get_chart_def($chart_id));
+    $chart_var = str_replace('-','', $chart_id);
     echo("
-Morris.".ucfirst($chart['type'])."(
+var $chart_var = Morris.".ucfirst($chart['type'])."(
   $data
-);");
-
+);
+fetch_chart_data($chart_var, '$chart_id');
+");
 }
+echo "});\n";
 
 ?>
-    </script>
+</script>
 
 </body>
 
