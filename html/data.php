@@ -1,9 +1,8 @@
 <?php
 /**
- * cache.php
+ * data.php
  *
- * Simple caching system.  Utilizes the opcache in HHVM and PHP 7.
- * Works fine on older php, just not as fast.
+ * Serves data to json requests
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,30 +23,14 @@
  * @author     Tony Murray <murraytony@gmail.com>
  */
 
-define("CACHE_TIME", 3600);
+require '../dibi/dibi.php';
+require "../definitions.php";
+require "../functions.php";
+require "../config.php";
 
-function cache_set($key, $val)
-{
-    $val = var_export($val, true);
-    // HHVM fails at __set_state, so just use object cast for now
-    $val = str_replace('stdClass::__set_state', '(object)', $val);
-    file_put_contents("/tmp/$key", '<?php $val = ' . $val . ';');
-}
-
-function cache_get($key)
-{
-    @include "/tmp/$key";
-    return isset($val) ? $val : false;
-}
-
-function cache_get_or_fetch($key, $func)
-{
-    $file = "/tmp/$key";
-    if (is_file($file) && time() - filemtime($file) < CACHE_TIME) {
-        return cache_get($key);
-    } else {
-        $val = call_user_func($func);
-        cache_set($key, $val);
-        return $val;
+if (isset($_REQUEST['id'])) {
+    $chart_id = $_REQUEST['id'];
+    if (array_key_exists($chart_id, $charts)) {
+        echo json_encode(get_chart_data($chart_id));
     }
 }

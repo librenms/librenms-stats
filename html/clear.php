@@ -27,5 +27,6 @@ if (!empty($uuid)) {
     $host_id = $result->fetchSingle();
     dibi::query("DELETE FROM `run` WHERE `hosts_id` = ?","$host_id");
     dibi::query("DELETE FROM `data` WHERE `uuid` = ?","$uuid");
+    dibi::query("DELETE FROM `devinfo` WHERE `uuid` = ?","$uuid");
     dibi::query("DELETE FROM `hosts` WHERE `hosts_id` = ?","$host_id");
 }

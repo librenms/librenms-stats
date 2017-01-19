@@ -56,6 +56,14 @@ if (!empty($uuid) && !empty($output['data'])) {
                 dibi::query("INSERT INTO `data`", array('uuid'=>$uuid,'run_id'=>$run_id,'total'=>"$total",'group'=>"$group",'name'=>"$name",'value'=>"$value"));
             }
         }
+
+        dibi::query("DELETE FROM devinfo WHERE `uuid`=?", $uuid);
+
+        $devices = array();
+        foreach($output['info'] as $info) {
+            $info['uuid'] = $uuid;
+            dibi::query('INSERT INTO `devinfo`', $info);
+        }
     }
 }
 
