@@ -1,0 +1,5 @@
+.panel-body > .fa-spinner {
+    position: absolute;
+    top: 50px;
+    margin-left: -40px;
+}
