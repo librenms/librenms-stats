@@ -106,9 +106,9 @@ function get_chart_data($chart_id) {
     $extra_sql = isset($chart['sql_limit']) ? $chart['sql_limit'] : '';
 
     if ($chart_id == 'draw-total_devices' || $chart_id == 'draw-total_ports') {
-        $sql = "SELECT DISTINCT(`uuid`), $total(`total`) AS `total`, `group`,`name`,DATE_FORMAT(`run`.`datetime`,'%Y-%m-%d') AS `value` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `group` IN ($groups) $extra_sql GROUP BY $group";
+        $sql = "SELECT DISTINCT(`uuid`), $total(`total`) AS `total`, `group`,`name`,DATE_FORMAT(`run`.`datetime`,'%Y-%m-%d') AS `value` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `group` IN ($groups) AND `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 3 MONTH) $extra_sql GROUP BY $group";
     } else {
-        $sql = "SELECT DISTINCT(`uuid`), $total(`total`) AS `total`, `group`,`name`,`value` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 48 HOUR) AND `group` IN ($groups) $extra_sql GROUP BY $group";
+        $sql = "SELECT DISTINCT(`uuid`), $total(`total`) AS `total`, `group`,`name`,`value` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 24 HOUR) AND `group` IN ($groups) $extra_sql GROUP BY $group";
     }
 
     $output = cache_get_or_fetch($chart_id, function() use ($sql, $type, $chart_id, $xkey) {
