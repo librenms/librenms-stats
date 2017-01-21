@@ -12,12 +12,12 @@ CREATE TABLE `data` (
   KEY `data_group_index` (`group`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE `devices` (
+CREATE TABLE `devinfo` (
   `uuid` char(64) NOT NULL,
   `count` int(11) NOT NULL,
   `os` char(64) NOT NULL,
-  `sysDescr` text,
-  `sysObjectID` text,
+  `sysDescr` varchar(255),
+  `sysObjectID` varchar(255),
   KEY `devices_uuid_index` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
