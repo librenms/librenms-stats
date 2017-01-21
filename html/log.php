@@ -37,34 +37,31 @@ if (!empty($uuid) && !empty($output['data'])) {
     }
     $result = dibi::query("SELECT `run_id` FROM `run` WHERE `datetime` >= DATE_SUB(NOW(), INTERVAL 20 HOUR) AND `hosts_id`=?","$host_id");
     $run_id = $result->fetchSingle();
-    if (empty($run_id)) {
+    if (true) {
+        dibi::begin();
         dibi::query("INSERT INTO `run`",array('hosts_id'=>$host_id,'datetime'=>array('NOW()')));
         $run_id = dibi::getInsertId();
-        foreach ($output['data'] as $group=>$data) {
-                $name = '';
-                $value = '';
+        foreach ($output['data'] as $group => $data) {
             foreach ($data as $entry) {
                 $keys = array_keys($entry);
                 $values = array_values($entry);
                 $total = $values[0];
-                if (isset($keys[1])) {
-                    $name = $keys[1];
-                }
-                if (isset($values[1])) {
-                    $value = $values[1];
-                }
-                dibi::query("INSERT INTO `data`", array('uuid'=>$uuid,'run_id'=>$run_id,'total'=>"$total",'group'=>"$group",'name'=>"$name",'value'=>"$value"));
+                $name = isset($keys[1]) ? $keys[1] : '';
+                $value = isset($values[1]) ? $values[1] : '';
+
+                $insert = compact('uuid', 'run_id', 'total', 'group', 'name', 'value');
+                dibi::query("INSERT INTO `data`", $insert);
             }
         }
 
-        dibi::query("DELETE FROM devinfo WHERE `uuid`=?", $uuid);
+        if (isset($output['info'])) {
+            dibi::query("DELETE FROM devinfo WHERE `uuid`=?", $uuid);
 
-        $devices = array();
-        foreach($output['info'] as $info) {
-            $info['uuid'] = $uuid;
-            dibi::query('INSERT INTO `devinfo`', $info);
+            foreach ($output['info'] as $info) {
+                $info['uuid'] = $uuid;
+                dibi::query('INSERT INTO `devinfo`', $info);
+            }
         }
+        dibi::commit();
     }
 }
-
-?>

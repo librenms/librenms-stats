@@ -1,6 +1,6 @@
 <?php
 /**
- * cache.php
+ * functions.php
  *
  * Simple caching system.  Utilizes the opcache in HHVM and PHP 7.
  * Works fine on older php, just not as fast.
@@ -72,70 +72,130 @@ function get_chart_def($chart_id, $data = array()) {
 
     $def = array();
     if ($type == 'bar') {
-        $def = array('element'=>$chart_id,
-                     'data'=>$data,
-                     'xkey'=>'y',
-                     'hideHover'=>false,
-                     'barRatio'=>0.4,
-                     'xLabelAngle'=>90,
-                     'ykeys'=>array('a'),
-                     'labels'=>array('Total'));
+        $def = array(
+            'element' => $chart_id,
+            'data' => $data,
+            'xkey' => 'y',
+            'hideHover' => false,
+            'barRatio' => 0.4,
+            'xLabelAngle' => 90,
+            'ykeys' => array('a'),
+            'labels' => array('Total')
+        );
     } elseif ($type == 'donut') {
         $def = array('element'=>$chart_id,
-                     'data'=>empty($data) ? array(array('labal'=>'','data'=>'')) : $data);
+                     'data'=>empty($data) ? array(array('label'=>'','data'=>'')) : $data);
     } elseif ($type == 'line') {
-        $def = array('element'=>$chart_id,
-                     'data'=>$data,
-                     'xkey'=>'y',
-                     'xLabelAngle'=>90,
-                     'ykeys'=>array('a'),
-                     'labels'=>array('Total'));
+        $def = array(
+            'element' => $chart_id,
+            'data' => $data,
+            'xkey' => 'y',
+            'xLabelAngle' => 90,
+            'ykeys' => array('a'),
+            'labels' => strpos($chart_id, 'percent') !== false ? array('Percent') : array('Total'),
+        );
     }
     return $def;
 }
 
+/**
+ * @param string $chart_id
+ * @return array
+ */
 function get_chart_data($chart_id) {
     global $charts;
+    if (!array_key_exists($chart_id, $charts)) {
+        return array();
+    }
+
     $chart = $charts[$chart_id];
 
     $type = $chart['type'];
     $groups = "'".implode("','",$chart['data'])."'";
-    $total = isset($chart['total']) ? $chart['total'] : 'SUM';
+    $total = isset($chart['total']) ? $chart['total'] : 'SUM(`total`)';
     $group = isset($chart['group']) ? $chart['group'] : '`group`,`value`';
     $xkey = isset($chart['xkey']) ? $chart['xkey'] : 'y';
     $extra_sql = isset($chart['sql_limit']) ? $chart['sql_limit'] : '';
 
-    if ($chart_id == 'draw-total_devices' || $chart_id == 'draw-total_ports') {
-        $sql = "SELECT DISTINCT(`uuid`), $total(`total`) AS `total`, `group`,`name`,DATE_FORMAT(`run`.`datetime`,'%Y-%m-%d') AS `value` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `group` IN ($groups) AND `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 3 MONTH) $extra_sql GROUP BY $group";
+
+    if ($type == 'line') {
+        $sql = "SELECT
+  DISTINCT(`uuid`),
+  $total AS `total`,
+  `group`,
+  `name`,
+  DATE_FORMAT(`run`.`datetime`, '%Y-%m-%d') AS `value`
+FROM `data`
+  LEFT JOIN `run` ON `data`.`run_id` = `run`.`run_id`
+WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 3 MONTH) AND `group` IN ($groups) $extra_sql
+GROUP BY $group";
     } else {
-        $sql = "SELECT DISTINCT(`uuid`), $total(`total`) AS `total`, `group`,`name`,`value` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 24 HOUR) AND `group` IN ($groups) $extra_sql GROUP BY $group";
+        $sql = "SELECT
+  DISTINCT(`uuid`),
+  $total AS `total`,
+  `group`,
+  `name`,
+  `value`
+FROM `data`
+  LEFT JOIN `run` ON `data`.`run_id` = `run`.`run_id`
+WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 24 HOUR) AND `group` IN ($groups) $extra_sql
+GROUP BY $group";
+    }
+
+    if ($type == 'bar') {
+        $sql .= ' ORDER BY `value` * 1, `value`';
     }
 
     $output = cache_get_or_fetch($chart_id, function() use ($sql, $type, $chart_id, $xkey) {
+        global $verbose;
         db_connect();
+        if (isset($verbose) && $verbose > 1) {
+            dibi::test($sql);
+        }
+
         $result = dibi::query($sql);
         $all = $result->fetchAll();
 
-        $response = array();
-        foreach ($all as $data) {
-            if (empty($data['name'])) {
-                $y = $data['group'];
-            } else {
-                $y = $data['value'];
-            }
-            if ($xkey != 'y') {
-                $y = $xkey;
-            }
-            $a = $data['total'];
-            if ($type == 'bar' || $type == 'line') {
-                $response[] = array('y'=>$y,'a'=>$a);
-            } elseif ($type == 'donut') {
-                $response[] = array('label'=>$y,'value'=>$a);
-            }
-        }
-
-        return $response;
+        return formatChartData($type, $all, $xkey);
     });
 
     return $output;
+}
+
+/**
+ * Formats data for Morris chart
+ * Incoming data should be an array of data with the following fields set:
+ *  name
+ *  group
+ *  value
+ *
+ *
+ * @param string $type Morris chart type bar, donut, or line
+ * @param array $data
+ * @param string $xkey The field to use for labels on the x-axis ???
+ * @return array
+ */
+function formatChartData($type, $data, $xkey = 'y')
+{
+    $response = array();
+    foreach ($data as $item) {
+        if (empty($item['name'])) {
+            $y = $item['group'];
+        } else {
+            $y = $item['value'];
+        }
+
+        if ($xkey != 'y') {
+            $y = $xkey;
+        }
+
+        $a = $item['total'];
+        if ($type == 'bar' || $type == 'line') {
+            $response[] = array('y' => $y, 'a' => $a);
+        } elseif ($type == 'donut') {
+            $response[] = array('label' => $y, 'value' => $a);
+        }
+    }
+
+    return $response;
 }

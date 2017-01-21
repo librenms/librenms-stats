@@ -7,19 +7,19 @@ CREATE TABLE `data` (
   `name` varchar(255) NOT NULL,
   `value` varchar(255) NOT NULL,
   PRIMARY KEY (`data_id`),
-  KEY `data_uuid_index` (`uuid`),
-  KEY `data_run_id_index` (`run_id`),
-  KEY `data_group_index` (`group`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+  KEY `data_group_index` (`group`),
+  KEY `data_run_id_group_index` (`run_id`,`group`),
+  KEY `data_uuid_index` (`uuid`)
+);
 
-CREATE TABLE `devices` (
+CREATE TABLE `devinfo` (
   `uuid` char(64) NOT NULL,
   `count` int(11) NOT NULL,
   `os` char(64) NOT NULL,
-  `sysDescr` text,
-  `sysObjectID` text,
+  `sysDescr` varchar(255) DEFAULT NULL,
+  `sysObjectID` varchar(255) DEFAULT NULL,
   KEY `devices_uuid_index` (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+);
 
 CREATE TABLE `hosts` (
   `hosts_id` int(11) NOT NULL AUTO_INCREMENT,
@@ -27,12 +27,13 @@ CREATE TABLE `hosts` (
   `first_added` datetime NOT NULL,
   `last_updated` datetime NOT NULL,
   PRIMARY KEY (`hosts_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+);
 
 CREATE TABLE `run` (
   `run_id` int(11) NOT NULL AUTO_INCREMENT,
   `hosts_id` int(11) NOT NULL,
   `datetime` datetime NOT NULL,
   PRIMARY KEY (`run_id`),
-  KEY `run_hosts_id_index` (`hosts_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+  KEY `run_hosts_id_index` (`hosts_id`),
+  KEY `run_datetime_index` (`datetime`)
+);
