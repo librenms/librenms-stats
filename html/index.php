@@ -77,7 +77,7 @@ require "../config.php";
 
 $submitters = cache_get_or_fetch('submitter_count', function () {
     db_connect();
-    $result = dibi::query("SELECT COUNT(DISTINCT(`uuid`)) AS `total` FROM `data` LEFT JOIN `run` ON `data`.`run_id`=`run`.`run_id` WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 24 HOUR)");
+    $result = dibi::query("SELECT COUNT(DISTINCT(`hosts_id`)) AS `total` FROM `run` WHERE `datetime` >= DATE_SUB(NOW(), INTERVAL 24 HOUR)");
     return $result->fetchAll()[0]['total'];
 });
 
@@ -94,7 +94,12 @@ $submitters = cache_get_or_fetch('submitter_count', function () {
 <?php
 
 foreach ($charts as $chart_id => $chart) {
-    list(, $title) = explode("-", $chart_id);
+    if (isset($chart['title'])) {
+        $title = $chart['title'];
+    } else {
+        list(, $title) = explode("-", $chart_id);
+        $title = ucwords(str_replace('_',' ',$title));
+    }
 
     echo('<div class="col-sm-6">
                     <div class="panel panel-primary">
