@@ -201,19 +201,31 @@ function formatChartData($type, $data, $xkey = 'y')
 }
 
 /**
- * @param null $os
+ * @param string $os
+ * @param string $sort
  * @param int $limit
  * @return bool|mixed
  */
-function getDeviceInfo($os = null, $limit = 10) {
-    $sql = 'SELECT SUM(`count`) AS `total`,`os`,`sysObjectID`,`sysDescr` 
-            FROM `devinfo`';
+function getDeviceInfo($os = null, $sort = '', $limit = 10) {
+    $sql = 'SELECT SUM(`count`) AS `total`,`os`,`sysObjectID`,`sysDescr` FROM `devinfo`';
+
     if (isset($os)) {
         $sql .= " WHERE `os`='$os'";
     }
-    $sql .= " GROUP BY `os`,`sysObjectID`,`sysDescr` ORDER BY `total` DESC LIMIT $limit";
 
-    $key = 'devinfo-'.$os.$limit;
+    if ($sort == 'os') {
+        $order = '`os`,`total`';
+    } elseif ($sort == 'sysObjectID') {
+        $order = '`sysObjectID`,`total`';
+    } elseif ($sort == 'sysDescr') {
+        $order = '`sysDescr`,`total`';
+    } else {
+        $order = '`total`';
+    }
+
+    $sql .= " GROUP BY `os`,`sysObjectID`,`sysDescr` ORDER BY $order DESC LIMIT $limit";
+
+    $key = 'devinfo-'.implode(func_get_args());
 
     return cache_get_or_fetch($key, function() use ($sql) {
         global $verbose;
