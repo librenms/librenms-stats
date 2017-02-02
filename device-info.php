@@ -29,17 +29,19 @@ require 'functions.php';
 require 'definitions.php';
 require 'config.php';
 
-$options = getopt('o:l:s:v');
+$config['cache_time'] = 2;
+$options = getopt('o:l:s:i:v');
 $verbose = isset($options['v']) ? count((array)$options['v']) : 0;
 $os = isset($options['o']) ? $options['o'] : null;
 $limit = isset($options['l']) ? $options['l'] : 10;
 $sort = isset($options['s']) ? $options['s'] : '';
+$object_id = isset($options['i']) ? $options['i'] : null;
 
 
-$results = getDeviceInfo($os, $sort, $limit);
+$results = getDeviceInfo($os, $object_id, $sort, $limit);
 $soi_size = array_reduce($results, function($max, $entry) {
     return max($max, strlen($entry['sysObjectID']));
-}, 0);
+}, 11);
 
 $mask = "|%5.5s|%-10.10s|%-{$soi_size}.{$soi_size}s| %s |\n";
 

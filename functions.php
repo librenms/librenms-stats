@@ -202,25 +202,36 @@ function formatChartData($type, $data, $xkey = 'y')
 
 /**
  * @param string $os
+ * @param string $object_id
  * @param string $sort
  * @param int $limit
- * @return bool|mixed
+ * @return array
  */
-function getDeviceInfo($os = null, $sort = '', $limit = 10) {
+function getDeviceInfo($os = null, $object_id = null, $sort = '', $limit = 10) {
     if ($sort == 'sysObjectID') {
         $sql = 'SELECT SUM(`count`) AS `total`,`os`,`sysObjectID` FROM `devinfo`';
     } else {
         $sql = 'SELECT SUM(`count`) AS `total`,`os`,`sysObjectID`,`sysDescr` FROM `devinfo`';
     }
 
-    if (isset($os)) {
-        $sql .= " WHERE `os`='$os'";
+    if (isset($os) || isset($object_id)) {
+        $searches = [];
+        if (isset($os)) {
+            $searches[] = "`os`='$os'";
+        }
+        if (isset($object_id)) {
+            $searches[] = "`sysObjectID`='" . str_replace('.1.3.6.1.4.1', 'enterprises', $object_id) . "'";
+            $searches[] = "`sysObjectID`='" . str_replace('enterprises', '.1.3.6.1.4.1', $object_id) . "'";
+            $searches[] = "`sysObjectID`='\"" . str_replace('enterprises', '.1.3.6.1.4.1', $object_id) . "\"'";
+        }
+
+        $sql .= ' WHERE '.implode(' OR ', $searches);
     }
 
     if ($sort == 'os') {
         $order = '`os`,`total`';
     } elseif ($sort == 'sysObjectID') {
-        $order = '`sysObjectID`,`total`';
+        $order = '`total`';
     } elseif ($sort == 'sysDescr') {
         $order = '`sysDescr`,`total`';
     } else {
