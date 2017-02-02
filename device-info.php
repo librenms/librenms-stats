@@ -48,7 +48,7 @@ $results = array_map(function ($entry) {
 
 // determine column sizes
 $os_size = array_reduce($results, function($max, $entry) {
-    return max($max, strlen($entry['sysObjectID']));
+    return max($max, strlen($entry['os']));
 }, 2);
 $soid_size = array_reduce($results, function($max, $entry) {
     return max($max, strlen($entry['sysObjectID']));
