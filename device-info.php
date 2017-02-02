@@ -1,3 +1,4 @@
+#!/usr/bin/php
 <?php
 /**
  * device-info.php
@@ -28,15 +29,16 @@ require 'functions.php';
 require 'definitions.php';
 require 'config.php';
 
-$options = getopt('o:l:v');
+$options = getopt('o:l:s:v');
 $verbose = isset($options['v']) ? count((array)$options['v']) : 0;
 $os = isset($options['o']) ? $options['o'] : null;
 $limit = isset($options['l']) ? $options['l'] : 10;
+$sort = isset($options['s']) ? $options['s'] : '';
 
 
-$results = getDeviceInfo($os, $limit);
+$results = getDeviceInfo($os, $sort, $limit);
 
-$mask = "|%5.5s |%-10.10s |%-15.15s | %s |\n";
+$mask = "|%5.5s|%-10.10s|%-15.15s| %s |\n";
 printf($mask, 'Total', 'OS', 'sysObjectID', 'sysDescr');
 foreach ($results as $result) {
     printf($mask, $result['total'], $result['os'], $result['sysObjectID'], $result['sysDescr']);
