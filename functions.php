@@ -53,19 +53,22 @@ function cache_get_or_fetch($key, $func)
     }
 }
 
-function db_connect() {
-    if(!dibi::isConnected()) {
+function db_connect()
+{
+    if (!dibi::isConnected()) {
         global $config;
         dibi::connect(array(
-            'database'=>$config['dbname'],
-            'username'=>$config['username'],
-            'password'=>$config['password'],
-            'host'=>$config['host'],
-            'driver'=>'mysqli'));
+            'database' => $config['dbname'],
+            'username' => $config['username'],
+            'password' => $config['password'],
+            'host' => $config['host'],
+            'driver' => 'mysqli'
+        ));
     }
 }
 
-function get_chart_def($chart_id, $data = array()) {
+function get_chart_def($chart_id, $data = array())
+{
     global $charts;
     $chart = $charts[$chart_id];
     $type = $chart['type'];
@@ -83,8 +86,10 @@ function get_chart_def($chart_id, $data = array()) {
             'labels' => array('Total')
         );
     } elseif ($type == 'donut') {
-        $def = array('element'=>$chart_id,
-                     'data'=>empty($data) ? array(array('label'=>'','data'=>'')) : $data);
+        $def = array(
+            'element' => $chart_id,
+            'data' => empty($data) ? array(array('label' => '', 'data' => '')) : $data
+        );
     } elseif ($type == 'line') {
         $def = array(
             'element' => $chart_id,
@@ -102,7 +107,8 @@ function get_chart_def($chart_id, $data = array()) {
  * @param string $chart_id
  * @return array
  */
-function get_chart_data($chart_id) {
+function get_chart_data($chart_id)
+{
     global $charts;
     if (!array_key_exists($chart_id, $charts)) {
         return array();
@@ -111,7 +117,7 @@ function get_chart_data($chart_id) {
     $chart = $charts[$chart_id];
 
     $type = $chart['type'];
-    $groups = "'".implode("','",$chart['data'])."'";
+    $groups = "'" . implode("','", $chart['data']) . "'";
     $total = isset($chart['total']) ? $chart['total'] : 'SUM(`total`)';
     $group = isset($chart['group']) ? $chart['group'] : '`group`,`value`';
     $xkey = isset($chart['xkey']) ? $chart['xkey'] : 'y';
@@ -146,7 +152,7 @@ GROUP BY $group";
         $sql .= ' ORDER BY `value` * 1, `value`';
     }
 
-    $output = cache_get_or_fetch($chart_id, function() use ($sql, $type, $chart_id, $xkey) {
+    $output = cache_get_or_fetch($chart_id, function () use ($sql, $type, $chart_id, $xkey) {
         global $verbose;
         db_connect();
         if (isset($verbose) && $verbose > 1) {
@@ -207,7 +213,8 @@ function formatChartData($type, $data, $xkey = 'y')
  * @param int $limit
  * @return array
  */
-function getDeviceInfo($os = null, $object_id = null, $sort = '', $limit = 10) {
+function getDeviceInfo($os = null, $object_id = null, $sort = '', $limit = 10)
+{
     if ($sort == 'sysObjectID') {
         $sql = 'SELECT SUM(`count`) AS `total`,`os`,`sysObjectID` FROM `devinfo`';
     } else {
@@ -220,12 +227,13 @@ function getDeviceInfo($os = null, $object_id = null, $sort = '', $limit = 10) {
             $searches[] = "`os`='$os'";
         }
         if (isset($object_id)) {
-            $searches[] = "`sysObjectID`='" . str_replace('.1.3.6.1.4.1', 'enterprises', $object_id) . "'";
-            $searches[] = "`sysObjectID`='" . str_replace('enterprises', '.1.3.6.1.4.1', $object_id) . "'";
-            $searches[] = "`sysObjectID`='\"" . str_replace('enterprises', '.1.3.6.1.4.1', $object_id) . "\"'";
+            $soid_search[] = "`sysObjectID` LIKE '" . str_replace('.1.3.6.1.4.1', 'enterprises', $object_id) . "%'";
+            $soid_search[] = "`sysObjectID` LIKE '" . str_replace('enterprises', '.1.3.6.1.4.1', $object_id) . "%'";
+            $soid_search[] = "`sysObjectID` LIKE '\"" . str_replace('enterprises', '.1.3.6.1.4.1', $object_id) . "%'";
+            $searches[] = '(' . implode(' OR ', $soid_search) . ')';
         }
 
-        $sql .= ' WHERE '.implode(' OR ', $searches);
+        $sql .= ' WHERE ' . implode(' AND ', $searches);
     }
 
     if ($sort == 'os') {
@@ -244,9 +252,9 @@ function getDeviceInfo($os = null, $object_id = null, $sort = '', $limit = 10) {
         $sql .= " GROUP BY `os`,`sysObjectID`,`sysDescr` ORDER BY $order DESC LIMIT $limit";
     }
 
-    $key = 'devinfo-'.implode(func_get_args());
+    $key = 'devinfo-' . implode(func_get_args());
 
-    return cache_get_or_fetch($key, function() use ($sql) {
+    return cache_get_or_fetch($key, function () use ($sql) {
         global $verbose;
         db_connect();
         if (isset($verbose) && $verbose > 1) {
