@@ -37,15 +37,30 @@ $limit = isset($options['l']) ? $options['l'] : 10;
 $sort = isset($options['s']) ? $options['s'] : '';
 $object_id = isset($options['i']) ? $options['i'] : null;
 
-
+// fetch data
 $results = getDeviceInfo($os, $object_id, $sort, $limit);
-$soi_size = array_reduce($results, function($max, $entry) {
+
+// normalize sysObjectID a bit
+$results = array_map(function ($entry) {
+    $entry['sysObjectID'] = str_replace('enterprises', '.1.3.6.1.4.1', trim($entry['sysObjectID'], '"'));
+    return $entry;
+}, $results);
+
+// determine column sizes
+$os_size = array_reduce($results, function($max, $entry) {
+    return max($max, strlen($entry['sysObjectID']));
+}, 2);
+$soid_size = array_reduce($results, function($max, $entry) {
     return max($max, strlen($entry['sysObjectID']));
 }, 11);
 
-$mask = "|%5.5s|%-10.10s|%-{$soi_size}.{$soi_size}s| %s |\n";
+// the line format
+$mask = "|%5.5s|%-{$os_size}.{$os_size}s|%-{$soid_size}.{$soid_size}s| %s |\n";
 
+// print header
 printf($mask, 'Total', 'OS', 'sysObjectID', 'sysDescr');
+
+// print results
 foreach ($results as $result) {
     printf(
         $mask,
