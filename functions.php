@@ -199,3 +199,32 @@ function formatChartData($type, $data, $xkey = 'y')
 
     return $response;
 }
+
+/**
+ * @param null $os
+ * @param int $limit
+ * @return bool|mixed
+ */
+function getDeviceInfo($os = null, $limit = 10) {
+    $sql = 'SELECT SUM(`count`) AS `total`,`os`,`sysObjectID`,`sysDescr` 
+            FROM `devinfo`';
+    if (isset($os)) {
+        $sql .= " WHERE `os`='$os'";
+    }
+    $sql .= " GROUP BY `os`,`sysObjectID`,`sysDescr` ORDER BY `total` DESC LIMIT $limit";
+
+    $key = 'devinfo-'.$os.$limit;
+
+    return cache_get_or_fetch($key, function() use ($sql) {
+        global $verbose;
+        db_connect();
+        if (isset($verbose) && $verbose > 1) {
+            dibi::test($sql);
+        }
+
+        $result = dibi::query($sql);
+
+        // change to an array of arrays instead of an array of objects.
+        return json_decode(json_encode($result->fetchAll()), true);
+    });
+}
