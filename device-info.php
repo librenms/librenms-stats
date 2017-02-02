@@ -37,9 +37,19 @@ $sort = isset($options['s']) ? $options['s'] : '';
 
 
 $results = getDeviceInfo($os, $sort, $limit);
+$soi_size = array_reduce($results, function($max, $entry) {
+    return max($max, strlen($entry['sysObjectID']));
+}, 0);
 
-$mask = "|%5.5s|%-10.10s|%-15.15s| %s |\n";
+$mask = "|%5.5s|%-10.10s|%-{$soi_size}.{$soi_size}s| %s |\n";
+
 printf($mask, 'Total', 'OS', 'sysObjectID', 'sysDescr');
 foreach ($results as $result) {
-    printf($mask, $result['total'], $result['os'], $result['sysObjectID'], $result['sysDescr']);
+    printf(
+        $mask,
+        $result['total'],
+        $result['os'],
+        $result['sysObjectID'],
+        isset($result['sysDescr']) ? $result['sysDescr'] : ''
+    );
 }
