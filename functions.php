@@ -227,6 +227,7 @@ function getDeviceInfo($os = null, $object_id = null, $sort = '', $limit = 10)
             $searches[] = "`os`='$os'";
         }
         if (isset($object_id)) {
+            $object_id = preg_replace('/^1/', '.1', $object_id);
             $soid_search[] = "`sysObjectID` LIKE '" . str_replace('.1.3.6.1.4.1', 'enterprises', $object_id) . "%'";
             $soid_search[] = "`sysObjectID` LIKE '" . str_replace('enterprises', '.1.3.6.1.4.1', $object_id) . "%'";
             $soid_search[] = "`sysObjectID` LIKE '\"" . str_replace('enterprises', '.1.3.6.1.4.1', $object_id) . "%'";
