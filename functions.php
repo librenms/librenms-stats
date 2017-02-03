@@ -44,7 +44,7 @@ function cache_get_or_fetch($key, $func)
     $file = "/tmp/$key";
     $cache_time = isset($config['cache_time']) ? $config['cache_time'] : 3600;
 
-    if (is_file($file) && time() - filemtime($file) < $cache_time) {
+    if ($config['cache'] && is_file($file) && time() - filemtime($file) < $cache_time) {
         return cache_get($key);
     } else {
         $val = call_user_func($func);
@@ -207,13 +207,14 @@ function formatChartData($type, $data, $xkey = 'y')
 }
 
 /**
- * @param string $os
- * @param string $object_id
- * @param string $sort
- * @param int $limit
+ * @param string $os os to filter
+ * @param string $object_id sysObjectID search string
+ * @param string $descr sysDescr search string
+ * @param string $sort sort field (also modifies groupby)
+ * @param int $limit result limit, default 10
  * @return array
  */
-function getDeviceInfo($os = null, $object_id = null, $sort = '', $limit = 10)
+function getDeviceInfo($os = null, $object_id = null, $descr = null, $sort = '', $limit = 10)
 {
     if ($sort == 'sysObjectID') {
         $sql = 'SELECT SUM(`count`) AS `total`,`os`,`sysObjectID` FROM `devinfo`';
@@ -221,10 +222,14 @@ function getDeviceInfo($os = null, $object_id = null, $sort = '', $limit = 10)
         $sql = 'SELECT SUM(`count`) AS `total`,`os`,`sysObjectID`,`sysDescr` FROM `devinfo`';
     }
 
-    if (isset($os) || isset($object_id)) {
+    if (isset($os) || isset($object_id) || isset($descr)) {
         $searches = [];
         if (isset($os)) {
             $searches[] = "`os`='$os'";
+        }
+        if (isset($descr)) {
+            // BINARY forces case sensitivity
+            $searches[] = "`sysDescr` LIKE BINARY '%$descr%'";
         }
         if (isset($object_id)) {
             $object_id = preg_replace('/^1/', '.1', $object_id);

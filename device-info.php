@@ -29,16 +29,17 @@ require 'functions.php';
 require 'definitions.php';
 require 'config.php';
 
-$config['cache_time'] = 2;
-$options = getopt('o:l:s:i:v');
+$config['cache'] = false;  // never cache this script's queries
+$options = getopt('o:l:s:i:d:v');
 $verbose = isset($options['v']) ? count((array)$options['v']) : 0;
 $os = isset($options['o']) ? $options['o'] : null;
 $limit = isset($options['l']) ? $options['l'] : 10;
 $sort = isset($options['s']) ? $options['s'] : '';
 $object_id = isset($options['i']) ? $options['i'] : null;
+$descr = isset($options['d']) ? $options['d'] : null;
 
 // fetch data
-$results = getDeviceInfo($os, $object_id, $sort, $limit);
+$results = getDeviceInfo($os, $object_id, $descr, $sort, $limit);
 
 // normalize sysObjectID a bit
 $results = array_map(function ($entry) {
