@@ -62,7 +62,7 @@ $charts = getChartDefintions();
                 </a>
             </div>
             <div id="navbar" class="navbar-collapse collapse">
-                <ul class="nav navbar-nav">
+                <ul class="nav navbar-nav navbar-right">
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="true">Jump to Graph<span class="caret"></span></a>
                         <ul class="dropdown-menu">
@@ -73,8 +73,6 @@ foreach ($charts as $chart_id => $chart) {
 ?>
                         </ul>
                     </li>
-                </ul>
-                <ul class="nav navbar-nav navbar-right">
                     <li><a href="http://docs.librenms.org/General/Callback-Stats-and-Privacy/">Privacy Policy</a></li>
                     <li class="hidden">
                         <a href="#page-top"></a>
