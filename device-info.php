@@ -30,10 +30,26 @@ require 'definitions.php';
 require 'config.php';
 
 $config['cache'] = false;  // never cache this script's queries
-$options = getopt('o:l:s:i:d:v');
+$options = getopt('ho:l:s:i:d:v');
+
+if (empty($options) || isset($options['h'])) {
+    echo <<<EOL
+\e[1mFilter Options:\e[0m
+ -o <os>          Return all entries where OS is \e[1mequal\e[0m to this value
+ -d <sysDescr>    Return all entries where sysDescr \e[1mcontains\e[0m this value
+ -i <sysObjectID> Return all entries where sysObjectID \e[1mstarts with\e[0m this value
+ -l <limit>       Limit the number of results, default 30
+\e[1mOutput Options:\e[0m
+ -s <field>       Only show this field to improve grouping. Valid fields: os, sysObjectID, sysDescr
+ -v               Display debug output.  Can be added multiple times to increase verbosity
+
+EOL;
+    exit;
+}
+
 $verbose = isset($options['v']) ? count((array)$options['v']) : 0;
 $os = isset($options['o']) ? $options['o'] : null;
-$limit = isset($options['l']) ? $options['l'] : 10;
+$limit = isset($options['l']) ? $options['l'] : 30;
 $sort = isset($options['s']) ? $options['s'] : '';
 $object_id = isset($options['i']) ? $options['i'] : null;
 $descr = isset($options['d']) ? $options['d'] : null;

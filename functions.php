@@ -119,7 +119,8 @@ function get_chart_data($chart_id)
     $type = $chart['type'];
     $groups = "'" . implode("','", $chart['data']) . "'";
     $total = isset($chart['total']) ? $chart['total'] : 'SUM(`total`)';
-    $group = isset($chart['group']) ? $chart['group'] : '`group`,`value`';
+    $value = isset($chart['value_modifier']) ? $chart['value_modifier'] : '`value`';
+    $group = isset($chart['group']) ? $chart['group'] : '`group`,`final_value`';
     $xkey = isset($chart['xkey']) ? $chart['xkey'] : 'y';
     $extra_sql = isset($chart['sql_limit']) ? $chart['sql_limit'] : '';
 
@@ -130,7 +131,7 @@ function get_chart_data($chart_id)
   $total AS `total`,
   `group`,
   `name`,
-  DATE_FORMAT(`run`.`datetime`, '%Y-%m-%d') AS `value`
+  DATE_FORMAT(`run`.`datetime`, '%Y-%m-%d') AS `final_value`
 FROM `data`
   LEFT JOIN `run` ON `data`.`run_id` = `run`.`run_id`
 WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 3 MONTH) AND `group` IN ($groups) $extra_sql
@@ -141,7 +142,7 @@ GROUP BY $group";
   $total AS `total`,
   `group`,
   `name`,
-  `value`
+  $value AS `final_value`
 FROM `data`
   LEFT JOIN `run` ON `data`.`run_id` = `run`.`run_id`
 WHERE `run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 24 HOUR) AND `group` IN ($groups) $extra_sql
@@ -149,7 +150,7 @@ GROUP BY $group";
     }
 
     if ($type == 'bar') {
-        $sql .= ' ORDER BY `value` * 1, `value`';
+        $sql .= ' ORDER BY `final_value` * 1, `final_value`';
     }
 
     $output = cache_get_or_fetch($chart_id, function () use ($sql, $type, $chart_id, $xkey) {
@@ -173,7 +174,7 @@ GROUP BY $group";
  * Incoming data should be an array of data with the following fields set:
  *  name
  *  group
- *  value
+ *  final_value
  *
  *
  * @param string $type Morris chart type bar, donut, or line
@@ -188,7 +189,7 @@ function formatChartData($type, $data, $xkey = 'y')
         if (empty($item['name'])) {
             $y = $item['group'];
         } else {
-            $y = $item['value'];
+            $y = $item['final_value'];
         }
 
         if ($xkey != 'y') {
