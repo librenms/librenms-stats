@@ -1,5 +1,44 @@
+body {
+    overflow-x: hidden;
+    font-family: "Roboto","Helvetica Neue",Helvetica,Arial,sans-serif;
+    padding-top: 60px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-weight: 700;
+    text-align: center;
+}
+
+.content {
+    text-align: center;
+}
+
+/* spinner positioning */
+.panel-body {
+    text-align: center;
+}
 .panel-body > .fa-spinner {
     position: absolute;
-    top: 50px;
+    top: 180px;
     margin-left: -40px;
+}
+
+/* SVG logo */
+.navbar-brand {
+    padding: 10px;
+}
+.navbar-brand>img {
+    display: inline-block;
+    height: 30px;
+    width: 178px;
+}
+
+/* fix stupid navbar covering content */
+.panel-title:before {
+    display: block;
+    content: " ";
+    margin-top: -75px;
+    height: 75px;
+    visibility: hidden;
 }

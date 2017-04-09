@@ -4,6 +4,8 @@ require '../dibi/dibi.php';
 require '../functions.php';
 require '../definitions.php';
 require "../config.php";
+
+$charts = getChartDefintions();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -21,16 +23,13 @@ require "../config.php";
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" />
 
-    <!-- Custom CSS -->
-    <link href="css/agency.css" rel="stylesheet">
+    <!-- App Specific CSS -->
     <link href="css/app.css" rel="stylesheet">
 
     <!-- Custom Fonts -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
     <link href="//fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
-    <link href='//fonts.googleapis.com/css?family=Kaushan+Script' rel='stylesheet' type='text/css'>
-    <link href='//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
-    <link href='//fonts.googleapis.com/css?family=Roboto+Slab:400,100,300,700' rel='stylesheet' type='text/css'>
+    <link href='//fonts.googleapis.com/css?family=Roboto:400,100,300,700' rel='stylesheet' type='text/css'>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.css" />
 
@@ -50,17 +49,31 @@ require "../config.php";
         <div class="container">
             <!-- Brand and toggle get grouped for better mobile display -->
             <div class="navbar-header page-scroll">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
                     <span class="sr-only">Toggle navigation</span>
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand page-scroll" href="#page-top">LibreNMS user stats</a>
+<!--                <a class="navbar-brand" href="https://librenms.org"> User Stats</a>-->
+                <a class="navbar-brand" href="https://librenms.org">
+                    <img alt="LibreNMS" src="/img/librenms.svg">
+                    User Stats
+                </a>
             </div>
-
-            <!-- Collect the nav links, forms, and other content for toggling -->
-            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <div id="navbar" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="true">Jump to Graph<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+<?php
+foreach ($charts as $chart_id => $chart) {
+    echo '<li> <a href="#' . $chart['anchor'] . '">' . $chart['title'] . '</a></li>';
+}
+?>
+                        </ul>
+                    </li>
+                </ul>
                 <ul class="nav navbar-nav navbar-right">
                     <li><a href="http://docs.librenms.org/General/Callback-Stats-and-Privacy/">Privacy Policy</a></li>
                     <li class="hidden">
@@ -72,7 +85,6 @@ require "../config.php";
         </div>
         <!-- /.container-fluid -->
     </nav>
-<br /><br /><br />
 <?php
 
 $submitters = cache_get_or_fetch('submitter_count', function () {
@@ -94,17 +106,10 @@ $submitters = cache_get_or_fetch('submitter_count', function () {
 <?php
 
 foreach ($charts as $chart_id => $chart) {
-    if (isset($chart['title'])) {
-        $title = $chart['title'];
-    } else {
-        list(, $title) = explode("-", $chart_id);
-        $title = ucwords(str_replace('_',' ',$title));
-    }
-
     echo('<div class="col-sm-6">
                     <div class="panel panel-primary">
                         <div class="panel-heading">
-                            <h3 class="panel-title">' . $title . '</h3>
+                            <h3 id="' . $chart['anchor'] . '" class="panel-title">' . $chart['title'] . '</h3>
                         </div>
                         <div class="panel-body">
                             <i id="' . $chart_id . '-spinner" class="fa fa-spinner fa-spin fa-5x fa-fw"></i>
@@ -125,18 +130,6 @@ foreach ($charts as $chart_id => $chart) {
 
     <!-- Bootstrap Core JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
-
-    <!-- Plugin JavaScript -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/classie/1.0.1/classie.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/animated-header/0.0.1/js/cbpAnimatedHeader.min.js"></script>
-
-    <!-- Contact Form JavaScript -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqBootstrapValidation/1.3.7/jqBootstrapValidation.min.js"></script>
-    <script src="js/contact_me.js"></script>
-
-    <!-- Custom Theme JavaScript -->
-    <script src="js/agency.js"></script>
 
     <!-- App specific JavaScript -->
     <script src="js/app.js"></script>

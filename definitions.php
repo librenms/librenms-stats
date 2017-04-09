@@ -17,6 +17,7 @@ $charts['draw-snmp_version'] = array(
     'data' => array('snmp_version'),
 );
 $charts['draw-php_version'] = array(
+    'title' => 'PHP Version',
     'type' => 'donut',
     'data' => array('php_version'),
     'value_modifier' => "substring_index(substring_index(`value`, '-', 1), '.', 2)",

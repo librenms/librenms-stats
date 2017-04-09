@@ -44,7 +44,12 @@ function cache_get_or_fetch($key, $func)
     $file = "/tmp/$key";
     $cache_time = isset($config['cache_time']) ? $config['cache_time'] : 3600;
 
-    if ($config['cache'] && is_file($file) && time() - filemtime($file) < $cache_time) {
+    if (
+        isset($config['cache']) &&
+        $config['cache'] &&
+        is_file($file) &&
+        time() - filemtime($file) < $cache_time
+    ) {
         return cache_get($key);
     } else {
         $val = call_user_func($func);
@@ -100,6 +105,7 @@ function get_chart_def($chart_id, $data = array())
             'labels' => strpos($chart_id, 'percent') !== false ? array('Percent') : array('Total'),
         );
     }
+    $def['resize'] = true;
     return $def;
 }
 
@@ -273,4 +279,25 @@ function getDeviceInfo($os = null, $object_id = null, $descr = null, $sort = '',
         // change to an array of arrays instead of an array of objects.
         return json_decode(json_encode($result->fetchAll()), true);
     });
+}
+
+/**
+ * Get the chart definitions array
+ * Make sure title and anchor
+ *
+ * @return array
+ */
+function getChartDefintions()
+{
+    global $charts;
+
+    foreach ($charts as $chart_id => $chart) {
+        $anchor = str_replace('draw-', '', $chart_id);
+        $charts[$chart_id]['anchor'] = $anchor;
+        if (!isset($charts[$chart_id]['title'])) {
+            $charts[$chart_id]['title'] = ucwords(str_replace('_',  ' ', $anchor));
+        }
+    }
+
+    return $charts;
 }
