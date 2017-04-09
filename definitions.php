@@ -23,7 +23,7 @@ $charts['draw-alert_rules'] = array(
 $charts['draw-alert_rules'] = array(
     'type' => 'donut',
     'data' => array('php_version'),
-    'value_modifier' => 'substring_index(substring_index(`value`, '-', 1), '.', 2)',
+    'value_modifier' => "substring_index(substring_index(`value`, '-', 1), '.', 2)",
 );
 $charts['draw-total_devices'] = array(
     'type' => 'line',
