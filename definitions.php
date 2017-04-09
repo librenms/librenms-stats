@@ -16,11 +16,7 @@ $charts['draw-snmp_version'] = array(
     'type' => 'donut',
     'data' => array('snmp_version'),
 );
-$charts['draw-alert_rules'] = array(
-    'type' => 'donut',
-    'data' => array('alert_rules'),
-);
-$charts['draw-alert_rules'] = array(
+$charts['draw-php_version'] = array(
     'type' => 'donut',
     'data' => array('php_version'),
     'value_modifier' => "substring_index(substring_index(`value`, '-', 1), '.', 2)",
@@ -66,4 +62,8 @@ $charts['draw-dbschema'] = array(
     'type' => 'bar',
     'data' => array('dbschema'),
     'total' => 'COUNT(`total`)',
+);
+$charts['draw-alert_rules'] = array(
+    'type' => 'donut',
+    'data' => array('alert_rules'),
 );
