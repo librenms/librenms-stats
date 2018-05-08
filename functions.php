@@ -26,6 +26,7 @@
 
 function cache_set($key, $val)
 {
+    $key = clean_filename($key);
     $val = var_export($val, true);
     // HHVM fails at __set_state, so just use object cast for now
     $val = str_replace('stdClass::__set_state', '(object)', $val);
@@ -34,6 +35,7 @@ function cache_set($key, $val)
 
 function cache_get($key)
 {
+    $key = clean_filename($key);
     @include "/tmp/$key";
     return isset($val) ? $val : false;
 }
@@ -41,6 +43,7 @@ function cache_get($key)
 function cache_get_or_fetch($key, $func)
 {
     global $config;
+    $key = clean_filename($key);
     $file = "/tmp/$key";
     $cache_time = isset($config['cache_time']) ? $config['cache_time'] : 3600;
 
@@ -300,4 +303,9 @@ function getChartDefintions()
     }
 
     return $charts;
+}
+
+function clean_filename($filename)
+{
+    return preg_replace('/[^a-z0-9\._-]+/i', '-', $filename);
 }
