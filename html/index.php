@@ -18,7 +18,8 @@ $charts = getChartDefintions();
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>LibreNMS - User-submitted Stats</title>
+    <title>Stats - LibreNMS User Submitted Stats</title>
+    <link rel="icon" type="image/png" href="/img/favicon.png">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" />
