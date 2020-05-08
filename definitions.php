@@ -47,6 +47,12 @@ $charts = [
         'data' => ['php_version'],
         'value_modifier' => "substring_index(substring_index(`value`, '-', 1), '.', 2)",
     ],
+    'draw-python_version' => [
+        'title' => 'Python Version',
+        'type' => 'donut',
+        'data' => ['python_version'],
+        'value_modifier' => "substring_index(value, '.', 2)",
+    ],
     'draw-mysql_version' => [
         'title' => 'MySQL/MariaDB Version',
         'type' => 'donut',
