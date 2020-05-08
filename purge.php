@@ -21,7 +21,10 @@ dibi::connect(array(
                     'password'=>$config['password'],
                     'host'=>$config['host'],
                     'driver'=>'mysqli'));
-$result = dibi::query("SELECT `run_id` FROM `run` WHERE `datetime` <= NOW() - INTERVAL 3 MONTH");
-$run_id = $result->fetchSingle();
-dibi::query("DELETE FROM `run` WHERE `run_id` = ?","$run_id");
-dibi::query("DELETE FROM `data` WHERE `run_id` = ?","$run_id");
+$result = dibi::query("SELECT `run_id` FROM `run` WHERE `datetime` <= NOW() - INTERVAL 6 MONTH");
+
+foreach ($result as $run) {
+    echo "Deleting " . $run->run_id . PHP_EOL;
+    dibi::query("DELETE FROM `data` WHERE `run_id` = ?", $run->run_id);
+    dibi::query("DELETE FROM `run` WHERE `run_id` = ?", $run->run_id);
+}
