@@ -41,6 +41,11 @@ $charts = [
         'type' => 'donut',
         'data' => ['snmp_version'],
     ],
+    'draw-kernel_version' => [
+        'title' => 'Kernel Version',
+        'type' => 'donut',
+        'data' => ['kernel_version'],
+    ],
     'draw-php_version' => [
         'title' => 'PHP Version',
         'type' => 'donut',
