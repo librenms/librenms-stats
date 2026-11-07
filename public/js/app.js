@@ -122,8 +122,8 @@ function barList(points, max, format) {
     return list;
 }
 
-function renderDonut(container, points, title, unit) {
-    const top = points.slice(0, 5);
+function renderDonut(container, points, title, unit, visibleLimit) {
+    const top = points.slice(0, visibleLimit);
     const other = points.slice(top.length);
     if (other.length > 0) {
         top.push({ label: 'Other', value: other.reduce((sum, point) => sum + point.value, 0) });
@@ -171,6 +171,7 @@ function renderDonut(container, points, title, unit) {
 
 function renderChart(chart, rows) {
     const { type, displayType = type, unit } = chart.dataset;
+    const visibleLimit = Number(chart.dataset.visibleLimit) || (displayType === 'donut' ? 5 : 8);
     const line = displayType === 'line';
     const percent = chart.hasAttribute('data-percent');
     const adoption = chart.hasAttribute('data-adoption');
@@ -213,7 +214,7 @@ function renderChart(chart, rows) {
             }
         }).observe(plot);
     } else if (displayType === 'donut') {
-        renderDonut(chart, points, title, unit);
+        renderDonut(chart, points, title, unit, visibleLimit);
     } else {
         const bars = adoption ? entries : points;
         const max = percent ? 100 : bars.reduce((largest, point) => Math.max(largest, point.value), 1);
@@ -222,8 +223,8 @@ function renderChart(chart, rows) {
                 ? `${format(point.value)} (${number.format(point.active)} of ${number.format(point.reported)})`
                 : '— (0 reported)'
             : point => format(point.value);
-        chart.append(barList(bars.slice(0, 8), max, barValue));
-        const extra = bars.slice(8);
+        chart.append(barList(bars.slice(0, visibleLimit), max, barValue));
+        const extra = bars.slice(visibleLimit);
         if (extra.length > 0) {
             chart.append(chartDetails(`Show ${number.format(extra.length)} more`, barList(extra, max, barValue)));
         }

@@ -43,6 +43,7 @@
                     <div class="chart-grid">
                         @foreach ($charts as $id => $chart)
                             @php($anchor = substr($id, strlen('draw-')))
+                            @php($displayType = $chart['display_type'] ?? $chart['type'])
                             <article class="chart-card" id="{{ $anchor }}" aria-labelledby="{{ $anchor }}-title">
                                 <header class="card-heading">
                                     <h3 id="{{ $anchor }}-title">{{ $chart['title'] }}</h3>
@@ -51,7 +52,7 @@
                                 @if($chart['adoption'] ?? false)
                                     <p class="chart-note">Among installations that reported each feature.</p>
                                 @endif
-                                <div class="chart" data-chart="{{ $id }}" data-type="{{ $chart['type'] }}" data-display-type="{{ $chart['display_type'] ?? $chart['type'] }}" data-unit="{{ $chart['unit'] ?? 'Total' }}" @if($chart['percent'] ?? false) data-percent @endif @if($chart['adoption'] ?? false) data-adoption @endif @if($chart['per_install'] ?? false) data-per-install @endif>
+                                <div class="chart" data-chart="{{ $id }}" data-type="{{ $chart['type'] }}" data-display-type="{{ $displayType }}" data-visible-limit="{{ config('stats.visible_categories')[$displayType] ?? '' }}" data-unit="{{ $chart['unit'] ?? 'Total' }}" @if($chart['percent'] ?? false) data-percent @endif @if($chart['adoption'] ?? false) data-adoption @endif @if($chart['per_install'] ?? false) data-per-install @endif>
                                     <p class="chart-message">Loading chart…</p>
                                 </div>
                             </article>

@@ -28,7 +28,7 @@ class StatsController
         $charts = [];
 
         foreach (array_keys($statistics->charts()) as $id) {
-            $charts[$id] = $statistics->chart($id);
+            $charts[$id] = $statistics->publicChart($id);
         }
 
         return response()->json($charts);
@@ -39,7 +39,7 @@ class StatsController
         $id = $request->input('id');
 
         return is_string($id) && isset($statistics->charts()[$id])
-            ? response()->json($statistics->chart($id))
+            ? response()->json($statistics->publicChart($id))
             : response('');
     }
 

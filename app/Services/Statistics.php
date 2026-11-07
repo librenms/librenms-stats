@@ -22,6 +22,27 @@ class Statistics
             ->distinct()->count('hosts_id'));
     }
 
+    public function publicChart(string $id): array
+    {
+        $rows = $this->chart($id);
+        $chart = $this->charts()[$id] ?? [];
+        $displayType = $chart['display_type'] ?? $chart['type'] ?? null;
+        $limit = config('stats.visible_categories')[$displayType] ?? null;
+
+        if ($limit === null || ($chart['percent'] ?? false) || count($rows) <= $limit) {
+            return $rows;
+        }
+
+        $value = $chart['type'] === 'donut' ? 'value' : 'a';
+        $hidden = collect($rows)
+            ->sortByDesc(fn (array $row) => (float) $row[$value])
+            ->slice($limit)
+            ->filter(fn (array $row) => (float) $row[$value] === 1.0)
+            ->all();
+
+        return array_values(array_diff_key($rows, $hidden));
+    }
+
     public function chart(string $id, bool $refresh = false, ?callable $debug = null): array
     {
         $chart = $this->charts()[$id] ?? null;
