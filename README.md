@@ -23,6 +23,20 @@ Set `DB_CONNECTION=sqlite` and `DB_DATABASE` to the absolute path of `database/p
 
 The seed uses dates relative to when it runs. To refresh the sample data after the recent charts age out, create a fresh SQLite file using the same SQL script and point `.env` at it.
 
+## Three-month test dataset
+
+Create a separate, empty SQLite database and run the Laravel seeder from the project root.
+
+```sh
+composer dump-autoload
+sqlite3 -bail database/test.sqlite < schema/sqlite.sql
+APP_ENV=local DB_CONNECTION=sqlite DB_DATABASE="$PWD/database/test.sqlite" STATS_SEED_INSTALLATIONS=100 php artisan db:seed
+```
+
+The seeder generates daily reports for the past three months. Increase `STATS_SEED_INSTALLATIONS` to test with more reporting installations. For MySQL or MariaDB, import `schema/schema.sql` into a fresh database and run `php artisan db:seed` with that database configured.
+
+Point your local `.env` at the test database and set `CACHE_STORE=array` when viewing the charts. Clear Laravel's configuration cache with `php artisan config:clear` if you have cached it.
+
 ## Maintenance
 
 ```sh

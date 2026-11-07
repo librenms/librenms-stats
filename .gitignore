@@ -11,5 +11,5 @@ config.php
 /storage/framework/maintenance.php
 /storage/logs/*
 
-/database/preview.sqlite*
+/database/*.sqlite*
 /composer.lock

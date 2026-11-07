@@ -29,12 +29,10 @@ class Statistics
             return [];
         }
 
-        $cacheKey = 'stats:charts:v3:'.$id;
-        if ($refresh) {
-            Cache::forget($cacheKey);
-        }
-
-        return Cache::remember($cacheKey, config('stats.cache_ttl'), function () use ($chart, $debug) {
+        $version = $chart['type'] === 'line' ? 'v4' : 'v3';
+        $cacheKey = "stats:charts:$version:$id";
+        $ttl = config('stats.cache_ttl');
+        $calculate = function () use ($chart, $debug) {
             if ($chart['adoption'] ?? false) {
                 return $this->featureAdoption(config('stats.adoption_features'), $debug);
             }
@@ -53,20 +51,19 @@ class Statistics
             }
 
             $group = $chart['group'] ?? '`group`, `final_value`';
-            $period = $line ? '3 MONTH' : '24 HOUR';
 
-            if ($snapshot || $perInstall) {
-                $query = $this->latestData($chart['data'], daily: $perInstall);
-                if ($perInstall) {
-                    $query->join('run', 'data.run_id', '=', 'run.run_id');
-                }
+            if ($perInstall) {
+                $query = $this->latestDailyData($chart['data'], $value);
+            } elseif ($snapshot) {
+                $query = $this->latestData($chart['data']);
             } else {
                 $query = DB::table('data')->join('run', 'data.run_id', '=', 'run.run_id');
-                if ($sqlite) {
-                    $cutoff = $line ? now('UTC')->subMonthsNoOverflow(3) : now('UTC')->subHours(24);
-                    $query->where('run.datetime', '>=', $cutoff);
+                if ($line) {
+                    $this->completedTrendDays($query);
+                } elseif ($sqlite) {
+                    $query->where('run.datetime', '>=', now('UTC')->subHours(24));
                 } else {
-                    $query->whereRaw("`run`.`datetime` >= DATE_SUB(NOW(), INTERVAL $period)");
+                    $query->whereRaw('`run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 24 HOUR)');
                 }
             }
 
@@ -103,29 +100,61 @@ class Statistics
                     ? ['label' => $label, 'value' => $row->total]
                     : ['y' => $label, 'a' => $row->total];
             })->all();
-        });
+        };
+
+        if ($refresh) {
+            $data = $calculate();
+            Cache::put($cacheKey, $data, $ttl);
+
+            return $data;
+        }
+
+        return Cache::remember($cacheKey, $ttl, $calculate);
     }
 
-    private function latestData(array $groups, bool $daily = false): Builder
+    private function latestDailyData(array $groups, string $day): Builder
     {
-        $sqlite = DB::getDriverName() === 'sqlite';
-        $period = $daily ? '3 MONTH' : '24 HOUR';
+        // Find the latest runs before reading their individual metric rows.
+        $latest = DB::table('run')
+            ->selectRaw('MAX(`run`.`run_id`) AS latest_run_id')
+            ->join('hosts', 'hosts.hosts_id', '=', 'run.hosts_id')
+            ->whereExists(function (Builder $query) use ($groups) {
+                $query->selectRaw('1')->from('data')
+                    ->whereColumn('data.run_id', 'run.run_id')
+                    ->whereIn('data.group', $groups);
+            })
+            ->groupBy('hosts.uuid')->groupByRaw($day);
+
+        $this->completedTrendDays($latest);
+
+        return DB::query()->fromSub($latest, 'latest')
+            ->join('data', 'data.run_id', '=', 'latest.latest_run_id')
+            ->join('run', 'data.run_id', '=', 'run.run_id');
+    }
+
+    private function completedTrendDays(Builder $query): void
+    {
+        if (DB::getDriverName() === 'sqlite') {
+            $today = now('UTC')->startOfDay();
+            $query->where('run.datetime', '>=', $today->copy()->subMonthsNoOverflow(3))
+                ->where('run.datetime', '<', $today);
+        } else {
+            $query->whereRaw('`run`.`datetime` >= DATE_SUB(CURRENT_DATE, INTERVAL 3 MONTH)')
+                ->whereRaw('`run`.`datetime` < CURRENT_DATE');
+        }
+    }
+
+    private function latestData(array $groups): Builder
+    {
         $latest = DB::table('data')
             ->select('data.uuid as snapshot_uuid', 'data.group as snapshot_group')
             ->selectRaw('MAX(`data`.`run_id`) AS latest_run_id')
             ->join('run', 'data.run_id', '=', 'run.run_id')
+            ->whereRaw(DB::getDriverName() === 'sqlite'
+                ? "`run`.`datetime` >= datetime('now', '-24 hours')"
+                : '`run`.`datetime` >= DATE_SUB(NOW(), INTERVAL 24 HOUR)')
             ->whereIn('data.group', $groups)
             ->groupBy('data.uuid', 'data.group');
-
-        if ($sqlite) {
-            $cutoff = $daily ? now('UTC')->subMonthsNoOverflow(3) : now('UTC')->subHours(24);
-            $latest->where('run.datetime', '>=', $cutoff);
-        } else {
-            $latest->whereRaw("`run`.`datetime` >= DATE_SUB(NOW(), INTERVAL $period)");
-        }
-        if ($daily) {
-            $latest->groupByRaw($sqlite ? 'date(`run`.`datetime`)' : "DATE_FORMAT(`run`.`datetime`, '%Y-%m-%d')");
-        }
 
         return DB::table('data')->joinSub($latest, 'latest', function ($join) {
             $join->on('data.uuid', '=', 'latest.snapshot_uuid')
