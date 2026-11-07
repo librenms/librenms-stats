@@ -53,6 +53,8 @@ class Statistics
         $version = $chart['type'] === 'line' ? 'v4' : 'v3';
         if (isset($chart['version_family'])) {
             $version = 'v5';
+        } elseif ($chart['adoption'] ?? false) {
+            $version = 'v4';
         }
         $cacheKey = "stats:charts:$version:$id";
         $ttl = config('stats.cache_ttl');
@@ -271,12 +273,13 @@ class Statistics
         }
 
         $reports = $query->get();
+        $minimums = config('stats.adoption_minimums');
         $points = [];
 
         foreach ($features as $label => $groups) {
             $featureReports = $reports->whereIn('group', $groups);
             $reported = $featureReports->pluck('uuid')->unique()->count();
-            $active = $featureReports->where('total', '>', 0)->pluck('uuid')->unique()->count();
+            $active = $featureReports->where('total', '>=', $minimums[$label] ?? 1)->pluck('uuid')->unique()->count();
             $points[] = [
                 'y' => $label,
                 'a' => $reported > 0 ? 100 * $active / $reported : null,

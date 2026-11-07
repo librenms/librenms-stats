@@ -50,7 +50,7 @@
                                     <span class="chart-period">{{ $chart['type'] === 'line' ? 'Last 3 months' : 'Last 24 hours' }}</span>
                                 </header>
                                 @if($chart['adoption'] ?? false)
-                                    <p class="chart-note">Among installations that reported each feature.</p>
+                                    <p class="chart-note">Among installations that reported each feature. Distributed polling means two or more reported pollers.</p>
                                 @endif
                                 <div class="chart" data-chart="{{ $id }}" data-type="{{ $chart['type'] }}" data-display-type="{{ $displayType }}" data-visible-limit="{{ config('stats.visible_categories')[$displayType] ?? '' }}" data-unit="{{ $chart['unit'] ?? 'Total' }}" @if($chart['percent'] ?? false) data-percent @endif @if($chart['adoption'] ?? false) data-adoption @endif @if($chart['per_install'] ?? false) data-per-install @endif>
                                     <p class="chart-message">Loading chart…</p>

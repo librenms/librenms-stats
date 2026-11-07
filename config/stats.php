@@ -11,5 +11,14 @@ return [
         'SLA' => ['sla'],
         'Virtualization' => ['vminfo', 'vmware'],
         'API tokens' => ['api_tokens'],
+        'IPv6 monitoring' => ['ipv6_addresses'],
+        'Wireless monitoring' => ['wireless'],
+        'IPsec monitoring' => ['ipsec'],
+        'VRF monitoring' => ['vrfs'],
+        'VLAN monitoring' => ['vlans'],
+        'Distributed polling' => ['pollers'],
+    ],
+    'adoption_minimums' => [
+        'Distributed polling' => 2,
     ],
 ];

@@ -98,7 +98,12 @@ WITH metrics (category, label, value, base, variation) AS (
         ('sla', 'rtt_type', 'icmpEcho', 10, 4),
         ('vminfo', 'vm_type', 'vmware', 25, 7),
         ('vmware', '', '', 25, 7),
-        ('api_tokens', '', '', 2, 3)
+        ('api_tokens', '', '', 2, 3),
+        ('ipv6_addresses', '', '', 36, 8),
+        ('ipsec', '', '', 5, 3),
+        ('vrfs', '', '', 3, 2),
+        ('vlans', 'vlan_type', 'ethernet', 14, 4),
+        ('pollers', '', '', 1, 1)
 )
 INSERT INTO data (uuid, run_id, total, "group", name, value)
 SELECT hosts.uuid, run.run_id,
@@ -108,6 +113,9 @@ SELECT hosts.uuid, run.run_id,
            WHEN metrics.category = 'bills' AND hosts.hosts_id != 2 THEN 0
            WHEN metrics.category = 'sla' AND hosts.hosts_id != 3 THEN 0
            WHEN metrics.category IN ('vminfo', 'vmware', 'api_tokens') AND hosts.hosts_id NOT IN (1, 2) THEN 0
+           WHEN metrics.category IN ('ipv6_addresses', 'vlans') AND hosts.hosts_id NOT IN (1, 2) THEN 0
+           WHEN metrics.category IN ('wireless', 'ipsec', 'vrfs') AND hosts.hosts_id NOT IN (1, 3) THEN 0
+           WHEN metrics.category = 'pollers' AND hosts.hosts_id = 1 THEN 3
            ELSE metrics.base + (run.run_id * 7 + hosts.hosts_id * 3) % metrics.variation
        END,
        metrics.category, metrics.label, metrics.value

@@ -33,6 +33,10 @@ class DatabaseSeeder extends Seeder
         'vminfo' => ['vm_type', ['vmware' => 17, 'kvm' => 6], 3],
         'vmware' => ['', ['' => 17], 3],
         'api_tokens' => ['', ['' => 3], 2],
+        'ipv6_addresses' => ['', ['' => 36], 2],
+        'ipsec' => ['', ['' => 5], 4],
+        'vrfs' => ['', ['' => 3], 3],
+        'vlans' => ['vlan_type', ['ethernet' => 14], 2],
     ];
 
     private const VERSIONS = [
@@ -142,6 +146,8 @@ class DatabaseSeeder extends Seeder
                 yield [$group, $name, $value, $base * $size + $variation + intdiv($day, 14)];
             }
         }
+
+        yield ['pollers', '', '', $installation % 4 === 0 ? 3 : 1];
 
         foreach (self::VERSIONS as $group => $versions) {
             yield [$group, $group === 'librenms_release' ? 'release' : 'version', $versions[$installation % count($versions)], 1];
