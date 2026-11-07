@@ -55,6 +55,10 @@ function chartDetails(label, content) {
     return details;
 }
 
+function formatAverage(point) {
+    return point.installs > 0 ? number.format(Math.round(point.value / point.installs)) : '—';
+}
+
 function renderLine(container, points, title, percent, format) {
     const width = Math.max(240, Math.floor(container.clientWidth));
     const height = 164;
@@ -199,7 +203,7 @@ function renderChart(chart, rows) {
         latestValue.append(
             element('strong', '', format(latest.value)),
             element('span', '', perInstall
-                ? `Avg ${latest.installs > 0 ? number.format(latest.value / latest.installs) : '—'} ${unit.toLowerCase()} / install`
+                ? `Avg ${formatAverage(latest)} ${unit.toLowerCase()} / install`
                 : 'of reported devices'),
         );
         const plot = element('div');
@@ -238,7 +242,7 @@ function renderChart(chart, rows) {
         if (perInstall) {
             columns.push(
                 ['Installations', point => number.format(point.installs)],
-                ['Avg / install', point => point.installs > 0 ? number.format(point.value / point.installs) : '—'],
+                ['Avg / install', formatAverage],
             );
         }
         chart.append(chartDetails('View daily values', dataTable(entries, title, columns)));
