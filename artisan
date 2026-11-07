@@ -1,0 +1,8 @@
+#!/usr/bin/env php
+<?php
+
+use Symfony\Component\Console\Input\ArgvInput;
+
+require __DIR__.'/vendor/autoload.php';
+
+exit((require __DIR__.'/bootstrap/app.php')->handleCommand(new ArgvInput));

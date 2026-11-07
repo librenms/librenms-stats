@@ -1,2 +1,15 @@
 .idea
 config.php
+
+/.env
+/vendor/
+/public/storage
+/bootstrap/cache/*.php
+/storage/framework/cache/data/*
+/storage/framework/views/*
+/storage/framework/down
+/storage/framework/maintenance.php
+/storage/logs/*
+
+/database/preview.sqlite*
+/composer.lock
