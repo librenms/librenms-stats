@@ -1,126 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="">
-    <meta name="author" content="">
-
-    <title>Stats - LibreNMS User Submitted Stats</title>
-    <link rel="icon" type="image/png" href="/img/favicon.png">
-
-    <!-- Bootstrap Core CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" />
-
-    <!-- App Specific CSS -->
-    <link href="css/app.css" rel="stylesheet">
-
-    <!-- Custom Fonts -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
-    <link href="//fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
-    <link href='//fonts.googleapis.com/css?family=Roboto:400,100,300,700' rel='stylesheet' type='text/css'>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.css" />
-
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
-
+    <meta name="description" content="Explore aggregate statistics shared by LibreNMS installations.">
+    <title>Usage Statistics · LibreNMS</title>
+    <link rel="icon" href="{{ asset('img/favicon.png') }}" type="image/png">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <script src="{{ asset('js/app.js') }}" defer></script>
 </head>
-
-<body id="page-top" class="index">
-
-    <!-- Navigation -->
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-        <div class="container">
-            <!-- Brand and toggle get grouped for better mobile display -->
-            <div class="navbar-header page-scroll">
-                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-<!--                <a class="navbar-brand" href="https://librenms.org"> User Stats</a>-->
-                <a class="navbar-brand" href="https://librenms.org">
-                    <img alt="LibreNMS" src="/img/librenms.svg">
-                    User Stats
-                </a>
-            </div>
-            <div id="navbar" class="navbar-collapse collapse">
-                <ul class="nav navbar-nav navbar-right">
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="true">Jump to Graph<span class="caret"></span></a>
-                        <ul class="dropdown-menu">
-                            @foreach ($charts as $chart)
-                                <li><a href="#{{ $chart['anchor'] }}">{{ $chart['title'] }}</a></li>
-                            @endforeach
-                        </ul>
-                    </li>
-                    <li><a href="http://docs.librenms.org/General/Callback-Stats-and-Privacy/">Privacy Policy</a></li>
-                    <li class="hidden">
-                        <a href="#page-top"></a>
-                    </li>
-                </ul>
-            </div>
-            <!-- /.navbar-collapse -->
-        </div>
-        <!-- /.container-fluid -->
-    </nav>
-
-    <!-- Header -->
-    <header>
-        <div class="container">
-            <div class="row">
-                <div class="col-sm-12">
-                    <h1><span class="label label-success">{{ $submitters }}</span></h1> <h3>LibreNMS installs have submitted statistics.</h3>
-                 </div>
-            </div>
-            <div class="row">
-                @foreach ($charts as $id => $chart)
-                    <div class="col-sm-6">
-                        <div class="panel panel-primary">
-                            <div class="panel-heading">
-                                <h3 id="{{ $chart['anchor'] }}" class="panel-title">{{ $chart['title'] }}</h3>
-                            </div>
-                            <div class="panel-body">
-                                <i id="{{ $id }}-spinner" class="fa fa-spinner fa-spin fa-5x fa-fw"></i>
-                                <div id="{{ $id }}"></div>
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-
-            </div>
+<body>
+    <header class="site-header">
+        <div class="shell site-header-inner">
+            <a class="brand" href="https://www.librenms.org/" aria-label="LibreNMS home">
+                <img src="{{ asset('img/librenms.svg') }}" alt="LibreNMS" width="133" height="26">
+            </a>
+            <h1>Usage Statistics</h1>
+            <a class="privacy-link" href="https://docs.librenms.org/General/Callback-Stats-and-Privacy/">Privacy</a>
         </div>
     </header>
 
-    <!-- jQuery -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <main class="shell">
+        <p class="reporting-count"><strong>{{ number_format($submitters) }}</strong> {{ $submitters === 1 ? 'installation' : 'installations' }} reporting in the last 24 hours</p>
 
-    <!-- Bootstrap Core JavaScript -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <nav class="category-nav" aria-label="Chart categories">
+            @foreach ($chartGroups->keys() as $category)
+                <a href="#category-{{ Illuminate\Support\Str::slug($category) }}">{{ $category }}</a>
+            @endforeach
+        </nav>
 
-    <!-- App specific JavaScript -->
-    <script src="js/app.js"></script>
+        <div id="dashboard" data-source="{{ route('charts', absolute: false) }}">
+            <p id="chart-status" class="sr-only" role="status"></p>
+            <div id="chart-error" class="notice" hidden>
+                <span>Chart data couldn’t load.</span>
+                <button type="button" id="chart-retry">Try again</button>
+            </div>
+            <noscript><p class="notice">Enable JavaScript to view the charts.</p></noscript>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.min.js"></script>
-
-<script>
-$(document).ready(function () {
-    @foreach ($charts as $id => $chart)
-        fetch_chart_data(Morris.{{ ucfirst($chart['type']) }}(@json($chart['options'])), @json($id));
-    @endforeach
-});
-</script>
-
+            @foreach ($chartGroups as $category => $charts)
+                <section class="chart-group" id="category-{{ Illuminate\Support\Str::slug($category) }}" aria-labelledby="group-{{ $loop->index }}">
+                    <h2 class="group-title" id="group-{{ $loop->index }}">{{ $category }}</h2>
+                    <div class="chart-grid">
+                        @foreach ($charts as $id => $chart)
+                            @php($anchor = substr($id, strlen('draw-')))
+                            <article class="chart-card" id="{{ $anchor }}" aria-labelledby="{{ $anchor }}-title">
+                                <header class="card-heading">
+                                    <h3 id="{{ $anchor }}-title">{{ $chart['title'] }}</h3>
+                                    <span class="chart-period">{{ $chart['type'] === 'line' ? 'Last 3 months' : 'Last 24 hours' }}</span>
+                                </header>
+                                @if($chart['adoption'] ?? false)
+                                    <p class="chart-note">Among installations that reported each feature.</p>
+                                @endif
+                                <div class="chart" data-chart="{{ $id }}" data-type="{{ $chart['type'] }}" data-unit="{{ $chart['unit'] ?? 'Total' }}" @if($chart['percent'] ?? false) data-percent @endif @if($chart['adoption'] ?? false) data-adoption @endif @if($chart['per_install'] ?? false) data-per-install @endif>
+                                    <p class="chart-message">Loading chart…</p>
+                                </div>
+                            </article>
+                        @endforeach
+                    </div>
+                </section>
+            @endforeach
+        </div>
+    </main>
 </body>
-
 </html>

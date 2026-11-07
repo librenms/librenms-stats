@@ -2,4 +2,12 @@
 
 return [
     'cache_ttl' => (int) env('STATS_CACHE_TTL', 86400),
+    'adoption_features' => [
+        'BGP' => ['bgppeer_state'],
+        'OSPF' => ['ospf', 'ospfv3'],
+        'Billing' => ['bills'],
+        'SLA' => ['sla'],
+        'Virtualization' => ['vminfo', 'vmware'],
+        'API tokens' => ['api_tokens'],
+    ],
 ];

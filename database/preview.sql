@@ -64,9 +64,6 @@ WITH metrics (category, label, value, base, variation) AS (
         ('sensors', 'sensor', 'fanspeed', 11, 4),
         ('snmp_version', 'version', 'v2c', 40, 12),
         ('snmp_version', 'version', 'v3', 25, 8),
-        ('php_version', 'version', '8.3.12', 1, 1),
-        ('php_version', 'version', '8.4.3-preview', 1, 1),
-        ('php_version', 'version', '8.5.1', 1, 1),
         ('type', 'type', 'network', 38, 12),
         ('type', 'type', 'server', 15, 9),
         ('type', 'type', 'storage', 6, 6),
@@ -77,20 +74,61 @@ WITH metrics (category, label, value, base, variation) AS (
         ('port_type', 'type', '6', 720, 48),
         ('port_type', 'type', '161', 68, 19),
         ('port_type', 'type', '53', 45, 10),
-        ('port_ifspeed', 'speed', '100000000', 70, 12),
-        ('port_ifspeed', 'speed', '1000000000', 460, 25),
-        ('port_ifspeed', 'speed', '10000000000', 110, 20),
-        ('dbschema', 'version', '2025_12', 1, 1),
-        ('dbschema', 'version', '2026_01', 1, 1),
-        ('alert_rules', 'rule', 'Device down', 9, 5),
-        ('alert_rules', 'rule', 'Interface errors', 6, 4),
-        ('alert_rules', 'rule', 'High temperature', 3, 4)
+        ('port_ifspeed', 'ifSpeed', '100', 70, 12),
+        ('port_ifspeed', 'ifSpeed', '1000', 460, 25),
+        ('port_ifspeed', 'ifSpeed', '10000', 110, 20),
+        ('alert_rules', 'severity', 'critical', 9, 5),
+        ('alert_rules', 'severity', 'warning', 6, 4),
+        ('alert_rules', 'severity', 'ok', 3, 4),
+        ('wireless', 'sensor_class', 'clients', 25, 6),
+        ('wireless', 'sensor_class', 'signal', 30, 6),
+        ('wireless', 'sensor_class', 'frequency', 18, 5),
+        ('bgppeer_state', 'bgpPeerState', 'established', 8, 3),
+        ('bgppeer_state', 'bgpPeerState', 'idle', 1, 1),
+        ('bgppeer_status', 'bgpPeerAdminStatus', 'start', 8, 3),
+        ('bgppeer_status', 'bgpPeerAdminStatus', 'stop', 1, 1),
+        ('xdp', 'protocol', 'lldp', 110, 10),
+        ('xdp', 'protocol', 'cdp', 60, 8),
+        ('ospf', 'ospfVersionNumber', '2', 3, 2),
+        ('ospfv3', 'ospfv3VersionNumber', '3', 1, 1),
+        ('ospf_links', 'ospfIfType', 'broadcast', 12, 3),
+        ('ospf_links', 'ospfIfType', 'pointToPoint', 8, 3),
+        ('ospfv3_links', 'ospfv3IfType', 'pointToPoint', 6, 3),
+        ('bills', 'bill_type', 'cdr', 2, 1),
+        ('sla', 'rtt_type', 'icmpEcho', 10, 4),
+        ('vminfo', 'vm_type', 'vmware', 25, 7),
+        ('vmware', '', '', 25, 7),
+        ('api_tokens', '', '', 2, 3)
 )
 INSERT INTO data (uuid, run_id, total, "group", name, value)
 SELECT hosts.uuid, run.run_id,
-       metrics.base + (run.run_id * 7 + hosts.hosts_id * 3) % metrics.variation,
+       CASE
+           WHEN metrics.category IN ('bgppeer_state', 'bgppeer_status') AND hosts.hosts_id = 4 THEN 0
+           WHEN metrics.category IN ('ospf', 'ospfv3') AND hosts.hosts_id NOT IN (1, 3) THEN 0
+           WHEN metrics.category = 'bills' AND hosts.hosts_id != 2 THEN 0
+           WHEN metrics.category = 'sla' AND hosts.hosts_id != 3 THEN 0
+           WHEN metrics.category IN ('vminfo', 'vmware', 'api_tokens') AND hosts.hosts_id NOT IN (1, 2) THEN 0
+           ELSE metrics.base + (run.run_id * 7 + hosts.hosts_id * 3) % metrics.variation
+       END,
        metrics.category, metrics.label, metrics.value
 FROM run JOIN hosts USING (hosts_id) CROSS JOIN metrics;
+
+
+WITH versions (category, first, second, third, fourth) AS (
+    VALUES
+        ('librenms_release', '26.11.0', '26.11.0', '26.10.1', '26.9.0'),
+        ('php_version', '8.3.12', '8.4.3', '8.4.3', '8.5.1'),
+        ('python_version', '3.12.8', '3.13.2', '3.13.2', '3.14.0'),
+        ('database_version', '10.11.6-MariaDB', '11.4.2-MariaDB', '8.0.40-MySQL', '8.4.3-MySQL'),
+        ('rrdtool_version', '1.8.0', '1.9.0', '1.9.0', '1.9.0'),
+        ('netsnmp_version', '5.9.3', '5.9.4', '5.9.4', '5.9.4'),
+        ('dbschema', '380', '390', '390', '395')
+)
+INSERT INTO data (uuid, run_id, total, "group", name, value)
+SELECT hosts.uuid, run.run_id, 1, versions.category,
+       CASE WHEN versions.category = 'librenms_release' THEN 'release' ELSE 'version' END,
+       CASE hosts.hosts_id WHEN 1 THEN versions.first WHEN 2 THEN versions.second WHEN 3 THEN versions.third ELSE versions.fourth END
+FROM run JOIN hosts USING (hosts_id) CROSS JOIN versions;
 
 INSERT INTO devinfo (uuid, count, os, sysDescr, sysObjectID)
 VALUES

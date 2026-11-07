@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\DB;
 
 class Submissions
 {
+    public const EMPTY_GROUP = '__empty_group__';
+
     public function record(string $uuid, array $groups, ?array $devices): void
     {
         DB::transaction(function () use ($uuid, $groups, $devices) {
@@ -21,7 +23,12 @@ class Submissions
 
             $runId = DB::table('run')->insertGetId(['hosts_id' => $hostId, 'datetime' => $now]);
 
+            $adoptionGroups = array_merge(...array_values(config('stats.adoption_features')));
             foreach ($groups as $group => $entries) {
+                // Preserve coverage when a collected feature has no objects.
+                if ($entries === [] && in_array($group, $adoptionGroups, true)) {
+                    $entries = [['total' => 0, self::EMPTY_GROUP => '']];
+                }
                 foreach ($entries as $entry) {
                     $keys = array_keys($entry);
                     $values = array_values($entry);

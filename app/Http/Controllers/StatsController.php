@@ -13,13 +13,25 @@ class StatsController
     {
         $charts = $statistics->charts();
 
-        foreach ($charts as $id => &$chart) {
-            $chart['anchor'] = substr($id, strlen('draw-'));
-            $chart['title'] ??= ucwords(str_replace('_', ' ', $chart['anchor']));
-            $chart['options'] = $this->chartOptions($id, $chart['type']);
+        foreach ($charts as $id => $chart) {
+            $charts[$id]['title'] ??= ucwords(str_replace('_', ' ', substr($id, strlen('draw-'))));
         }
 
-        return view('dashboard', ['charts' => $charts, 'submitters' => $statistics->submitterCount()]);
+        return view('dashboard', [
+            'chartGroups' => collect($charts)->groupBy('category', preserveKeys: true),
+            'submitters' => $statistics->submitterCount(),
+        ]);
+    }
+
+    public function charts(Statistics $statistics)
+    {
+        $charts = [];
+
+        foreach (array_keys($statistics->charts()) as $id) {
+            $charts[$id] = $statistics->chart($id);
+        }
+
+        return response()->json($charts);
     }
 
     public function chart(Request $request, Statistics $statistics)
@@ -90,25 +102,5 @@ class StatsController
         }
 
         return response('');
-    }
-
-    private function chartOptions(string $id, string $type): array
-    {
-        $options = ['element' => $id, 'data' => [], 'resize' => true];
-
-        if ($type === 'donut') {
-            $options['data'] = [['label' => '', 'data' => '']];
-
-            return $options;
-        }
-
-        $options += [
-            'xkey' => 'y',
-            'xLabelAngle' => 90,
-            'ykeys' => ['a'],
-            'labels' => [str_contains($id, 'percent') ? 'Percent' : 'Total'],
-        ];
-
-        return $type === 'bar' ? $options + ['hideHover' => false, 'barRatio' => 0.4] : $options;
     }
 }
