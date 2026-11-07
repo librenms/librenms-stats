@@ -51,7 +51,7 @@ class Statistics
         }
 
         $version = $chart['type'] === 'line' ? 'v4' : 'v3';
-        if ($chart['database_version_families'] ?? false) {
+        if (isset($chart['version_family'])) {
             $version = 'v5';
         }
         $cacheKey = "stats:charts:$version:$id";
@@ -61,8 +61,13 @@ class Statistics
                 return $this->featureAdoption(config('stats.adoption_features'), $debug);
             }
 
-            if ($chart['database_version_families'] ?? false) {
-                return $this->databaseVersionFamilies($chart['data'], $debug);
+            if (isset($chart['version_family'])) {
+                $normalize = match ($chart['version_family']) {
+                    'database' => $this->databaseVersionFamily(...),
+                    'netsnmp' => $this->netSnmpVersionFamily(...),
+                };
+
+                return $this->versionFamilies($chart['data'], $normalize, $debug);
             }
 
             $type = $chart['type'];
@@ -140,7 +145,7 @@ class Statistics
         return Cache::remember($cacheKey, $ttl, $calculate);
     }
 
-    private function databaseVersionFamilies(array $groups, ?callable $debug): array
+    private function versionFamilies(array $groups, callable $normalize, ?callable $debug): array
     {
         $query = $this->latestData($groups)
             ->where('data.name', '!=', Submissions::EMPTY_GROUP)
@@ -153,17 +158,17 @@ class Statistics
 
         return $query->get()
             ->groupBy('uuid')
-            ->map(function ($reports) {
-                $report = $reports->firstWhere('group', 'database_version') ?? $reports->first();
+            ->map(function ($reports) use ($groups, $normalize) {
+                $report = $reports->firstWhere('group', $groups[0]) ?? $reports->first();
 
-                return $this->databaseVersionFamily($report->value, legacy: $report->group === 'mysql_version');
+                return $normalize($report->value, $report->group);
             })
             ->countBy()
             ->map(fn ($count, $family) => ['y' => $family, 'a' => $count])
             ->values()->all();
     }
 
-    private function databaseVersionFamily(string $version, bool $legacy): string
+    private function databaseVersionFamily(string $version, string $group): string
     {
         preg_match('/\b(MariaDB|MySQL|SQLite)\b/i', $version, $matches);
         $engine = match (strtolower($matches[1] ?? '')) {
@@ -182,7 +187,7 @@ class Statistics
         }
 
         $family = $matches[0];
-        if ($engine === null && $legacy) {
+        if ($engine === null && $group === 'mysql_version') {
             $engine = match (true) {
                 str_starts_with($family, '10.') => 'MariaDB',
                 in_array($family, ['5.6', '5.7'], true), str_starts_with($family, '8.') => 'MySQL',
@@ -193,6 +198,13 @@ class Statistics
         }
 
         return $engine === null ? 'Unknown' : "$engine $family";
+    }
+
+    private function netSnmpVersionFamily(string $version): string
+    {
+        return preg_match('/^(?:NET-SNMP\s+)?(\d{1,3}\.\d{1,3})(?=\.|[-+\s]|$)/i', trim($version), $matches)
+            ? $matches[1]
+            : 'Unknown';
     }
 
     private function latestDailyData(array $groups, string $day): Builder

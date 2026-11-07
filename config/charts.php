@@ -144,7 +144,7 @@ $versions = [
     ],
     'database_version' => [
         'title' => 'Database versions',
-        'database_version_families' => true,
+        'version_family' => 'database',
         'data' => ['database_version', 'mysql_version'],
     ],
     'mysql_version' => [
@@ -155,7 +155,7 @@ $versions = [
     ] + $majorMinor,
     'dbschema' => ['title' => 'DB Schema'],
     'rrdtool_version' => ['title' => 'RRDTool versions'],
-    'netsnmp_version' => ['title' => 'Net-SNMP versions'],
+    'netsnmp_version' => ['title' => 'Net-SNMP versions', 'version_family' => 'netsnmp'],
 ];
 
 foreach ($versions as $group => $options) {
