@@ -51,11 +51,18 @@ class Statistics
         }
 
         $version = $chart['type'] === 'line' ? 'v4' : 'v3';
+        if ($chart['database_version_families'] ?? false) {
+            $version = 'v5';
+        }
         $cacheKey = "stats:charts:$version:$id";
         $ttl = config('stats.cache_ttl');
         $calculate = function () use ($chart, $debug) {
             if ($chart['adoption'] ?? false) {
                 return $this->featureAdoption(config('stats.adoption_features'), $debug);
+            }
+
+            if ($chart['database_version_families'] ?? false) {
+                return $this->databaseVersionFamilies($chart['data'], $debug);
             }
 
             $type = $chart['type'];
@@ -131,6 +138,61 @@ class Statistics
         }
 
         return Cache::remember($cacheKey, $ttl, $calculate);
+    }
+
+    private function databaseVersionFamilies(array $groups, ?callable $debug): array
+    {
+        $query = $this->latestData($groups)
+            ->where('data.name', '!=', Submissions::EMPTY_GROUP)
+            ->select('data.uuid', 'data.group', 'data.value')
+            ->orderBy('data.data_id');
+
+        if ($debug !== null) {
+            $debug($query->toRawSql());
+        }
+
+        return $query->get()
+            ->groupBy('uuid')
+            ->map(function ($reports) {
+                $report = $reports->firstWhere('group', 'database_version') ?? $reports->first();
+
+                return $this->databaseVersionFamily($report->value, legacy: $report->group === 'mysql_version');
+            })
+            ->countBy()
+            ->map(fn ($count, $family) => ['y' => $family, 'a' => $count])
+            ->values()->all();
+    }
+
+    private function databaseVersionFamily(string $version, bool $legacy): string
+    {
+        preg_match('/\b(MariaDB|MySQL|SQLite)\b/i', $version, $matches);
+        $engine = match (strtolower($matches[1] ?? '')) {
+            'mariadb' => 'MariaDB',
+            'mysql' => 'MySQL',
+            'sqlite' => 'SQLite',
+            default => null,
+        };
+        $version = preg_replace('/^(?:MariaDB|MySQL|SQLite)\s+/i', '', trim($version));
+        if ($engine === 'MariaDB') {
+            $version = preg_replace('/^5\.5\.5-(?=\d)/', '', $version);
+        }
+
+        if (!preg_match('/^\d{1,3}\.\d{1,3}(?=\.|[-+\s]|$)/', $version, $matches)) {
+            return 'Unknown';
+        }
+
+        $family = $matches[0];
+        if ($engine === null && $legacy) {
+            $engine = match (true) {
+                str_starts_with($family, '10.') => 'MariaDB',
+                in_array($family, ['5.6', '5.7'], true), str_starts_with($family, '8.') => 'MySQL',
+                default => null,
+            };
+
+            return $engine === null ? "$family (engine unreported)" : "$engine $family";
+        }
+
+        return $engine === null ? 'Unknown' : "$engine $family";
     }
 
     private function latestDailyData(array $groups, string $day): Builder

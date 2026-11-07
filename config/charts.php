@@ -142,9 +142,14 @@ $versions = [
         'value_modifier' => "substring_index(`value`, '.', 2)",
         'sqlite_value_modifier' => "substr(`value`, 1, instr(`value`, '.') + instr(substr(`value`, instr(`value`, '.') + 1) || '.', '.') - 1)",
     ],
-    'database_version' => ['title' => 'Database versions'],
+    'database_version' => [
+        'title' => 'Database versions',
+        'database_version_families' => true,
+        'data' => ['database_version', 'mysql_version'],
+    ],
     'mysql_version' => [
         'title' => 'MySQL/MariaDB versions (legacy reports)',
+        'dashboard' => false,
         'type' => 'donut',
         'display_type' => 'bar',
     ] + $majorMinor,

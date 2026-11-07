@@ -18,7 +18,9 @@ class StatsController
         }
 
         return view('dashboard', [
-            'chartGroups' => collect($charts)->groupBy('category', preserveKeys: true),
+            'chartGroups' => collect($charts)
+                ->filter(fn (array $chart) => $chart['dashboard'] ?? true)
+                ->groupBy('category', preserveKeys: true),
             'submitters' => $statistics->submitterCount(),
         ]);
     }
