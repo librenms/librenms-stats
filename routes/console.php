@@ -3,6 +3,7 @@
 use App\Services\Statistics;
 use App\Services\Submissions;
 use Illuminate\Support\Facades\Artisan;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 
 Artisan::command('stats:cache-graphs
     {--c|chart=* : Chart ID to cache. Repeat to select multiple charts}
@@ -41,21 +42,13 @@ Artisan::command('stats:device-info
         $this->getOutput()->isVeryVerbose() ? $this->line(...) : null,
     );
 
-    $osWidth = 2;
-    $objectIdWidth = 11;
-    foreach ($devices as $device) {
-        $device->sysObjectID = str_replace('enterprises', '.1.3.6.1.4.1', trim($device->sysObjectID ?? '', '"'));
-        $osWidth = max($osWidth, strlen($device->os));
-        $objectIdWidth = max($objectIdWidth, strlen($device->sysObjectID));
-    }
-
-    $format = "|%5.5s|%-{$osWidth}.{$osWidth}s|%-{$objectIdWidth}.{$objectIdWidth}s| %s |";
-    $output = $this->getOutput();
-    $output->writeln(sprintf($format, 'Total', 'OS', 'sysObjectID', 'sysDescr'), $output::OUTPUT_RAW);
-
-    foreach ($devices as $device) {
-        $output->writeln(sprintf($format, $device->total, $device->os, $device->sysObjectID, $device->sysDescr ?? ''), $output::OUTPUT_RAW);
-    }
+    $rows = array_map(static fn ($device) => [
+        $device->total,
+        OutputFormatter::escape($device->os),
+        OutputFormatter::escape(str_replace('enterprises', '.1.3.6.1.4.1', trim($device->sysObjectID ?? '', '"'))),
+        OutputFormatter::escape($device->sysDescr ?? ''),
+    ], $devices);
+    $this->table(['Total', 'OS', 'sysObjectID', 'sysDescr'], $rows);
 
     return 0;
 })->purpose('Query submitted device information');

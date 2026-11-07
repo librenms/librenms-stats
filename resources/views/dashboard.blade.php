@@ -51,7 +51,7 @@
                                 @if($chart['adoption'] ?? false)
                                     <p class="chart-note">Among installations that reported each feature.</p>
                                 @endif
-                                <div class="chart" data-chart="{{ $id }}" data-type="{{ $chart['type'] }}" data-unit="{{ $chart['unit'] ?? 'Total' }}" @if($chart['percent'] ?? false) data-percent @endif @if($chart['adoption'] ?? false) data-adoption @endif @if($chart['per_install'] ?? false) data-per-install @endif>
+                                <div class="chart" data-chart="{{ $id }}" data-type="{{ $chart['type'] }}" data-display-type="{{ $chart['display_type'] ?? $chart['type'] }}" data-unit="{{ $chart['unit'] ?? 'Total' }}" @if($chart['percent'] ?? false) data-percent @endif @if($chart['adoption'] ?? false) data-adoption @endif @if($chart['per_install'] ?? false) data-per-install @endif>
                                     <p class="chart-message">Loading chart…</p>
                                 </div>
                             </article>

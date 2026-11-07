@@ -28,7 +28,6 @@ function svgElement(tag, attributes = {}, value = '') {
 }
 
 function dataTable(points, title, columns) {
-    const details = element('details', 'chart-table');
     const table = element('table');
     const caption = element('caption', 'sr-only', title);
     table.append(caption);
@@ -47,7 +46,12 @@ function dataTable(points, title, columns) {
         }
     }
 
-    details.append(element('summary', '', 'View data table'), table);
+    return table;
+}
+
+function chartDetails(label, content) {
+    const details = element('details', 'chart-table');
+    details.append(element('summary', '', label), content);
     return details;
 }
 
@@ -100,35 +104,33 @@ function renderLine(container, points, title, percent, format) {
     container.replaceChildren(svg);
 }
 
-function renderBars(container, points, format, percent) {
+function barList(points, max, format) {
     const list = element('ul', 'bars');
-    const top = points.slice(0, 8);
-    const max = percent ? 100 : Math.max(1, ...top.map(point => point.value));
 
-    for (const { label, value } of top) {
+    for (const point of points) {
         const item = element('li');
-        const name = element('span', 'series-label', label);
+        const name = element('span', 'series-label', point.label);
         const track = element('span', 'bar-track');
         track.setAttribute('aria-hidden', 'true');
         const fill = element('span', 'bar-fill');
-        fill.style.width = `${(value ?? 0) / max * 100}%`;
+        fill.style.width = `${(point.value ?? 0) / max * 100}%`;
         track.append(fill);
-        item.append(name, element('span', 'value', format(value)), track);
+        item.append(name, element('span', 'value', format(point)), track);
         list.append(item);
     }
 
-    container.append(list);
-    if (points.length > top.length) {
-        container.append(element('p', 'chart-caption', `Top ${top.length} of ${points.length} categories`));
-    }
+    return list;
 }
 
-function renderDonut(container, points, total, share, unit) {
+function renderDonut(container, points, title, unit) {
     const top = points.slice(0, 5);
-    if (points.length > top.length) {
-        top.push({ label: 'Other categories', value: points.slice(top.length).reduce((sum, point) => sum + point.value, 0) });
+    const other = points.slice(top.length);
+    if (other.length > 0) {
+        top.push({ label: 'Other', value: other.reduce((sum, point) => sum + point.value, 0) });
     }
 
+    const total = points.reduce((sum, point) => sum + point.value, 0);
+    const share = value => total > 0 ? percentShare.format(value / total) : '—';
     const ring = element('div', 'donut');
     const center = element('div', 'donut-total');
     const count = element('strong', '', compact.format(total));
@@ -148,7 +150,7 @@ function renderDonut(container, points, total, share, unit) {
         const item = element('li');
         const swatch = element('span', 'swatch');
         swatch.style.backgroundColor = color;
-        item.append(swatch, element('span', 'series-label', label), element('span', 'value', share(value)));
+        item.append(swatch, element('span', 'series-label', label), element('span', 'value', `${number.format(value)} · ${share(value)}`));
         legend.append(item);
     }
 
@@ -156,11 +158,20 @@ function renderDonut(container, points, total, share, unit) {
     const layout = element('div', 'donut-layout');
     layout.append(ring, legend);
     container.append(layout);
+
+    if (other.length > 0) {
+        const table = dataTable(other, `${title} · Other`, [
+            ['Category', point => point.label],
+            [unit, point => number.format(point.value)],
+            ['Share', point => share(point.value)],
+        ]);
+        container.append(chartDetails(`Show other (${number.format(other.length)})`, table));
+    }
 }
 
 function renderChart(chart, rows) {
-    const { type, unit } = chart.dataset;
-    const line = type === 'line';
+    const { type, displayType = type, unit } = chart.dataset;
+    const line = displayType === 'line';
     const percent = chart.hasAttribute('data-percent');
     const adoption = chart.hasAttribute('data-adoption');
     const perInstall = chart.hasAttribute('data-per-install');
@@ -175,8 +186,6 @@ function renderChart(chart, rows) {
         ? (a, b) => a.label.localeCompare(b.label)
         : (a, b) => (b.value ?? -Infinity) - (a.value ?? -Infinity));
     const points = entries.filter(point => point.value !== null && (!line || /^\d{4}-\d{2}-\d{2}$/.test(point.label)));
-    const total = type === 'donut' ? points.reduce((sum, point) => sum + point.value, 0) : 0;
-    const share = value => total > 0 && value !== null ? percentShare.format(value / total) : '—';
 
     chart.replaceChildren();
     const title = chart.closest('article').querySelector('h3').textContent;
@@ -203,33 +212,35 @@ function renderChart(chart, rows) {
                 renderLine(plot, points, title, percent, format);
             }
         }).observe(plot);
-    } else if (type === 'donut') {
-        renderDonut(chart, points, total, share, unit);
+    } else if (displayType === 'donut') {
+        renderDonut(chart, points, title, unit);
     } else {
-        renderBars(chart, adoption ? entries : points, format, percent);
+        const bars = adoption ? entries : points;
+        const max = percent ? 100 : bars.reduce((largest, point) => Math.max(largest, point.value), 1);
+        const barValue = adoption
+            ? point => point.reported > 0
+                ? `${format(point.value)} (${number.format(point.active)} of ${number.format(point.reported)})`
+                : '— (0 reported)'
+            : point => format(point.value);
+        chart.append(barList(bars.slice(0, 8), max, barValue));
+        const extra = bars.slice(8);
+        if (extra.length > 0) {
+            chart.append(chartDetails(`Show ${number.format(extra.length)} more`, barList(extra, max, barValue)));
+        }
     }
 
-    if (entries.length > 0) {
+    if (line && entries.length > 0) {
         const columns = [
-            [line ? 'Date' : 'Category', point => point.label],
+            ['Date', point => point.label],
             [percent ? 'Percent' : unit, point => format(point.value)],
         ];
-        if (type === 'donut') {
-            columns.push(['Share', point => share(point.value)]);
-        }
         if (perInstall) {
             columns.push(
                 ['Installations', point => number.format(point.installs)],
                 ['Avg / install', point => point.installs > 0 ? number.format(point.value / point.installs) : '—'],
             );
         }
-        if (adoption) {
-            columns.push(
-                ['Using feature', point => number.format(point.active)],
-                ['Reporting feature', point => number.format(point.reported)],
-            );
-        }
-        chart.append(dataTable(entries, title, columns));
+        chart.append(chartDetails('View daily values', dataTable(entries, title, columns)));
     }
 }
 

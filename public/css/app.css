@@ -87,9 +87,7 @@ main.shell { padding-block: 22px 32px; }
 .series-label { overflow-wrap: anywhere; }
 .bar-track { grid-column: 1 / -1; height: 5px; border-radius: 999px; background: #eee; }
 .bar-fill { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
-.chart-caption { margin-top: 12px; color: var(--muted); font-size: .75rem; }
-
-.donut-layout { display: grid; grid-template-columns: minmax(88px, 145px) minmax(0, 1fr); gap: clamp(12px, 2.5vw, 24px); align-items: center; }
+.donut-layout { display: grid; grid-template-columns: clamp(80px, 30%, 145px) minmax(0, 1fr); gap: clamp(12px, 2.5vw, 24px); align-items: center; }
 .donut { display: grid; place-items: center; aspect-ratio: 1; border-radius: 50%; }
 .donut-total { display: grid; place-content: center; width: 70%; aspect-ratio: 1; border-radius: 50%; background: var(--surface); text-align: center; }
 .donut-total strong { font-size: 1.25rem; font-weight: 600; line-height: 1.25; font-variant-numeric: lining-nums tabular-nums; }
@@ -101,6 +99,7 @@ main.shell { padding-block: 22px 32px; }
 
 .chart-table { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); font-size: .875rem; }
 .chart-table summary { width: fit-content; color: var(--accent); font-size: .8125rem; font-weight: 500; cursor: pointer; }
+.chart-table .bars { margin-top: 8px; }
 .chart-table table { width: 100%; margin-top: 8px; border-collapse: collapse; }
 .chart-table :is(th, td) { padding: 8px 6px; border-bottom: 1px solid var(--border); text-align: left; overflow-wrap: anywhere; }
 .chart-table th { color: var(--muted); font-size: .75rem; font-weight: 600; line-height: 1.4; }

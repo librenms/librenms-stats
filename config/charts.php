@@ -43,12 +43,6 @@ $charts['draw-os'] = array(
     'type' => 'bar',
     'data' => array('os'),
 );
-$charts['draw-snmp_version'] = array(
-    'category' => 'Devices & ports',
-    'title' => 'SNMP Version',
-    'type' => 'donut',
-    'data' => array('snmp_version'),
-);
 $charts['draw-port_type'] = array(
     'category' => 'Devices & ports',
     'type' => 'bar',
@@ -61,33 +55,17 @@ $charts['draw-port_speed'] = array(
     'type' => 'bar',
     'data' => array('port_ifspeed'),
 );
-$charts['draw-applications'] = array(
-    'category' => 'Monitoring',
+$charts['draw-snmp_version'] = array(
+    'category' => 'Devices & ports',
+    'title' => 'SNMP Version',
     'type' => 'donut',
-    'data' => array('applications'),
+    'data' => array('snmp_version'),
 );
-$charts['draw-sensors'] = array(
-    'category' => 'Monitoring',
+$charts['draw-xdp'] = array(
+    'category' => 'Routing & topology',
+    'title' => 'Discovery protocols',
     'type' => 'donut',
-    'data' => array('sensors'),
-);
-$charts['draw-alert_rules'] = array(
-    'category' => 'Monitoring',
-    'type' => 'donut',
-    'data' => array('alert_rules'),
-);
-$charts['draw-wireless'] = array(
-    'category' => 'Monitoring',
-    'title' => 'Wireless sensors',
-    'type' => 'donut',
-    'data' => array('wireless'),
-);
-$charts['draw-feature_adoption'] = array(
-    'category' => 'Feature adoption',
-    'title' => 'Installations using each feature',
-    'type' => 'bar',
-    'percent' => true,
-    'adoption' => true,
+    'data' => array('xdp'),
 );
 $charts['draw-bgppeer_state'] = array(
     'category' => 'Routing & topology',
@@ -100,12 +78,6 @@ $charts['draw-bgppeer_status'] = array(
     'title' => 'BGP administrative status',
     'type' => 'donut',
     'data' => array('bgppeer_status'),
-);
-$charts['draw-xdp'] = array(
-    'category' => 'Routing & topology',
-    'title' => 'Discovery protocols',
-    'type' => 'donut',
-    'data' => array('xdp'),
 );
 $charts['draw-ospf'] = array(
     'category' => 'Routing & topology',
@@ -125,55 +97,70 @@ $charts['draw-ospfv3_links'] = array(
     'type' => 'bar',
     'data' => array('ospfv3_links'),
 );
-$charts['draw-php_version'] = array(
-    'category' => 'Versions & releases',
-    'snapshot' => true,
-    'unit' => 'Installations',
-    'title' => 'PHP Version',
+$charts['draw-sensors'] = array(
+    'category' => 'Monitoring',
     'type' => 'donut',
-    'data' => array('php_version'),
-    'value_modifier' => "substring_index(substring_index(`value`, '-', 1), '.', 2)",
-    'sqlite_value_modifier' => "substr($sqlitePhpVersion, 1, $sqliteFirstDot + instr(substr($sqlitePhpVersion, $sqliteFirstDot + 1) || '.', '.') - 1)",
+    'display_type' => 'bar',
+    'data' => array('sensors'),
 );
-$charts['draw-dbschema'] = array(
-    'category' => 'Versions & releases',
-    'snapshot' => true,
-    'unit' => 'Installations',
-    'title' => 'DB Schema',
+$charts['draw-wireless'] = array(
+    'category' => 'Monitoring',
+    'title' => 'Wireless sensors',
+    'type' => 'donut',
+    'display_type' => 'bar',
+    'data' => array('wireless'),
+);
+$charts['draw-applications'] = array(
+    'category' => 'Monitoring',
+    'type' => 'donut',
+    'display_type' => 'bar',
+    'data' => array('applications'),
+);
+$charts['draw-alert_rules'] = array(
+    'category' => 'Monitoring',
+    'type' => 'donut',
+    'data' => array('alert_rules'),
+);
+$charts['draw-feature_adoption'] = array(
+    'category' => 'Feature adoption',
+    'title' => 'Installations using each feature',
     'type' => 'bar',
-    'data' => array('dbschema'),
+    'percent' => true,
+    'adoption' => true,
 );
 
-foreach (array(
-    'librenms_release' => 'LibreNMS releases',
-    'python_version' => 'Python versions',
-    'database_version' => 'Database versions',
-    'rrdtool_version' => 'RRDTool versions',
-    'netsnmp_version' => 'Net-SNMP versions',
-) as $group => $title) {
-    $charts['draw-'.$group] = array(
+$majorMinor = [
+    'value_modifier' => "substring_index(substring_index(`value`, '-', 1), '.', 2)",
+    'sqlite_value_modifier' => "substr($sqlitePhpVersion, 1, $sqliteFirstDot + instr(substr($sqlitePhpVersion, $sqliteFirstDot + 1) || '.', '.') - 1)",
+];
+
+$versions = [
+    'librenms_release' => ['title' => 'LibreNMS releases'],
+    'php_version' => ['title' => 'PHP Version', 'type' => 'donut', 'display_type' => 'bar'] + $majorMinor,
+    'python_version' => [
+        'title' => 'Python versions',
+        'value_modifier' => "substring_index(`value`, '.', 2)",
+        'sqlite_value_modifier' => "substr(`value`, 1, instr(`value`, '.') + instr(substr(`value`, instr(`value`, '.') + 1) || '.', '.') - 1)",
+    ],
+    'database_version' => ['title' => 'Database versions'],
+    'mysql_version' => [
+        'title' => 'MySQL/MariaDB versions (legacy reports)',
+        'type' => 'donut',
+        'display_type' => 'bar',
+    ] + $majorMinor,
+    'dbschema' => ['title' => 'DB Schema'],
+    'rrdtool_version' => ['title' => 'RRDTool versions'],
+    'netsnmp_version' => ['title' => 'Net-SNMP versions'],
+];
+
+foreach ($versions as $group => $options) {
+    $charts['draw-'.$group] = $options + [
         'category' => 'Versions & releases',
-        'title' => $title,
         'type' => 'bar',
         'snapshot' => true,
         'unit' => 'Installations',
-        'data' => array($group),
-    );
+        'data' => [$group],
+    ];
 }
-
-$charts['draw-python_version'] += array(
-    'value_modifier' => "substring_index(`value`, '.', 2)",
-    'sqlite_value_modifier' => "substr(`value`, 1, instr(`value`, '.') + instr(substr(`value`, instr(`value`, '.') + 1) || '.', '.') - 1)",
-);
-$charts['draw-mysql_version'] = array(
-    'category' => 'Versions & releases',
-    'snapshot' => true,
-    'unit' => 'Installations',
-    'title' => 'MySQL/MariaDB Version',
-    'type' => 'donut',
-    'data' => array('mysql_version'),
-    'value_modifier' => "substring_index(substring_index(`value`, '-', 1), '.', 2)",
-    'sqlite_value_modifier' => "substr($sqlitePhpVersion, 1, $sqliteFirstDot + instr(substr($sqlitePhpVersion, $sqliteFirstDot + 1) || '.', '.') - 1)",
-);
 
 return $charts;
