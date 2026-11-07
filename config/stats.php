@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'asset_version' => '1',
     'cache_ttl' => (int) env('STATS_CACHE_TTL', 86400),
     'adoption_features' => [
         'BGP' => ['bgppeer_state'],

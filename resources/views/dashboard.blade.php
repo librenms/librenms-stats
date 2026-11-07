@@ -6,8 +6,8 @@
     <meta name="description" content="Explore aggregate statistics shared by LibreNMS installations.">
     <title>Usage Statistics · LibreNMS</title>
     <link rel="icon" href="{{ asset('img/favicon.png') }}" type="image/png">
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-    <script src="{{ asset('js/app.js') }}" defer></script>
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ config('stats.asset_version') }}">
+    <script src="{{ asset('js/app.js') }}?v={{ config('stats.asset_version') }}" defer></script>
 </head>
 <body>
     <header class="site-header">
