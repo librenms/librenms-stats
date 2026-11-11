@@ -9,7 +9,7 @@ const number = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
 const compact = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 });
 const percentShare = new Intl.NumberFormat(undefined, { style: 'percent', maximumFractionDigits: 1 });
 const date = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
-const palette = ['#c9192c', '#414141', '#416fa1', '#8d5a35', '#627742', '#929292'];
+const palette = Array.from({ length: 6 }, (_, index) => `var(--series-${index + 1})`);
 
 function element(tag, className = '', value = '') {
     const node = document.createElement(tag);
@@ -249,6 +249,15 @@ function renderChart(chart, rows) {
     }
 }
 
+function showChartError(failure) {
+    console.error(failure);
+    status.textContent = 'Chart data could not load.';
+    error.hidden = false;
+    for (const chart of charts) {
+        chart.replaceChildren(element('p', 'chart-message', 'Chart data unavailable.'));
+    }
+}
+
 async function loadCharts() {
     error.hidden = true;
     status.textContent = 'Loading chart data.';
@@ -259,7 +268,8 @@ async function loadCharts() {
     try {
         const response = await fetch(dashboard.dataset.source, { headers: { Accept: 'application/json' } });
         if (!response.ok) {
-            throw new Error(`Chart request returned ${response.status}`);
+            showChartError(new Error(`Chart request returned ${response.status}`));
+            return;
         }
 
         const data = await response.json();
@@ -268,12 +278,7 @@ async function loadCharts() {
         }
         status.textContent = 'Charts loaded.';
     } catch (failure) {
-        console.error(failure);
-        status.textContent = 'Chart data could not load.';
-        error.hidden = false;
-        for (const chart of charts) {
-            chart.replaceChildren(element('p', 'chart-message', 'Chart data unavailable.'));
-        }
+        showChartError(failure);
     }
 }
 

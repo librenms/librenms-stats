@@ -6,6 +6,7 @@
     <meta name="description" content="Explore aggregate statistics shared by LibreNMS installations.">
     <title>Usage Statistics · LibreNMS</title>
     <link rel="icon" href="{{ asset('img/favicon.png') }}" type="image/png">
+    <script src="{{ asset('js/theme.js') }}?v={{ config('stats.asset_version') }}"></script>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ config('stats.asset_version') }}">
     <script src="{{ asset('js/app.js') }}?v={{ config('stats.asset_version') }}" defer></script>
 </head>
@@ -16,7 +17,30 @@
                 <img src="{{ asset('img/librenms.svg') }}" alt="LibreNMS" width="133" height="26">
             </a>
             <h1>Usage Statistics</h1>
-            <a class="privacy-link" href="https://docs.librenms.org/General/Callback-Stats-and-Privacy/">Privacy</a>
+            <div class="header-actions">
+                <fieldset class="theme-control" hidden>
+                    <legend class="sr-only">Color theme</legend>
+                    <label class="theme-option" title="Follow system appearance">
+                        <input type="radio" name="theme" value="auto" aria-label="Auto (follow system appearance)" checked>
+                        <span>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+                        </span>
+                    </label>
+                    <label class="theme-option" title="Use light appearance">
+                        <input type="radio" name="theme" value="light" aria-label="Light">
+                        <span>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
+                        </span>
+                    </label>
+                    <label class="theme-option" title="Use dark appearance">
+                        <input type="radio" name="theme" value="dark" aria-label="Dark">
+                        <span>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 13.3A9 9 0 0 1 10.7 3.5a9 9 0 1 0 9.8 9.8Z"/></svg>
+                        </span>
+                    </label>
+                </fieldset>
+                <a class="privacy-link" href="https://docs.librenms.org/General/Callback-Stats-and-Privacy/">Privacy</a>
+            </div>
         </div>
     </header>
 
